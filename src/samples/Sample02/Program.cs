@@ -2,11 +2,8 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Core.Expressions;
-using Elsa.Core.Extensions;
 using Elsa.Expressions;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample02
@@ -14,26 +11,27 @@ namespace Sample02
     /// <summary>
     /// A minimal workflows program defined in code using fluent workflow builder and Console activities.
     /// </summary>
-    class Program
+    internal static class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
             // Define a workflow.
-            var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
+            var workflowBuilderFactory = services.GetRequiredService<Func<IWorkflowBuilder>>();
+            var workflowBuilder = workflowBuilderFactory();
             var workflowDefinition = workflowBuilder
-                .StartWith<WriteLine>(x => x.TextExpression = new PlainTextExpression("Hello world!"))
-                .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Goodbye cruel world..."))
+                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hello world!"))
+                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Goodbye cruel world..."))
                 .Build();
 
-            // Invoke the workflow.
+            // Start the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflowDefinition);
+            await invoker.StartAsync(workflowDefinition);
 
             Console.ReadLine();
         }

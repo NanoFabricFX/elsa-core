@@ -1,15 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Extensions;
-using Elsa.Results;
+using Elsa.Extensions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Core.Results
+namespace Elsa.Results
 {
     /// <summary>
     /// A result that carries information about the next activity to execute.
@@ -40,12 +40,11 @@ namespace Elsa.Core.Results
         private void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
             var completedActivity = workflowContext.CurrentActivity;
-            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? OutcomeNames.Done) == endpoint.Outcome);
-
-            foreach (var connection in connections)
-            {
-                workflowContext.ScheduleActivity(connection.Target.Activity);
-            }
+            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity &&
+                                                                              (x.Source.Outcome ?? OutcomeNames.Done).Equals(endpoint.Outcome, StringComparison.OrdinalIgnoreCase));
+            var activities = connections.Select(x => x.Target.Activity);
+            
+            workflowContext.ScheduleActivities(activities);
         }
     }
 }

@@ -1,9 +1,13 @@
 ﻿using System;
-using Elsa.Results;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace Elsa.Core.Results
+namespace Elsa.Results
 {
     public class FaultWorkflowResult : ActivityExecutionResult
     {
@@ -12,14 +16,25 @@ namespace Elsa.Core.Results
         public FaultWorkflowResult(Exception exception) : this(exception.Message)
         {
         }
-        
+
         public FaultWorkflowResult(string errorMessage)
         {
             this.errorMessage = errorMessage;
         }
-        
-        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
+
+        public override async Task ExecuteAsync(
+            IWorkflowInvoker invoker,
+            WorkflowExecutionContext workflowContext,
+            CancellationToken cancellationToken)
         {
+            var eventHandlers = workflowContext.ServiceProvider.GetServices<IWorkflowEventHandler>();
+            var logger = workflowContext.ServiceProvider.GetRequiredService<ILogger<FaultWorkflowResult>>();
+            var currentActivity = workflowContext.CurrentActivity;
+            
+            await eventHandlers.InvokeAsync(
+                x => x.ActivityFaultedAsync(workflowContext, currentActivity, errorMessage, cancellationToken),
+                logger);
+
             workflowContext.Fault(workflowContext.CurrentActivity, errorMessage);
         }
     }

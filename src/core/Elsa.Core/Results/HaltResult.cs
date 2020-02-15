@@ -1,11 +1,10 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Core.Results
+namespace Elsa.Results
 {
     /// <summary>
     /// Halts workflow execution.
@@ -26,7 +25,8 @@ namespace Elsa.Core.Results
             if (workflowContext.IsFirstPass && ContinueOnFirstPass)
             {
                 var activityInvoker = workflowContext.ServiceProvider.GetRequiredService<IActivityInvoker>();
-                var result = await activityInvoker.ExecuteAsync(workflowContext, activity, cancellationToken);
+                var result = await activityInvoker.ResumeAsync(workflowContext, activity, cancellationToken);
+                
                 workflowContext.IsFirstPass = false;
 
                 await result.ExecuteAsync(invoker, workflowContext, cancellationToken);

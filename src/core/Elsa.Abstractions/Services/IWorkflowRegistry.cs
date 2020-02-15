@@ -1,15 +1,19 @@
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IWorkflowRegistry
     {
-        void RegisterWorkflow(WorkflowDefinition definition);
-        void RegisterWorkflow<T>() where T:IWorkflow, new();
-        IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType);
-        WorkflowDefinition GetById(string id);
+        Task<IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)>> ListByStartActivityAsync(
+            string activityType,
+            CancellationToken cancellationToken = default);
+
+        Task<WorkflowDefinitionVersion> GetWorkflowDefinitionAsync(
+            string id,
+            VersionOptions version,
+            CancellationToken cancellationToken = default);
     }
 }

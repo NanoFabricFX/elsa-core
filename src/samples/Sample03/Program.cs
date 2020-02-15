@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Elsa;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Core.Expressions;
-using Elsa.Core.Extensions;
+using Elsa.Expressions;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample03
@@ -15,33 +13,33 @@ namespace Sample03
     /// <summary>
     /// A minimal workflows program defined as data (workflow definition) and Console activities.
     /// </summary>
-    class Program
+    internal static class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
             // Define a workflow as data so we can store it somewhere (file, database, etc.).
-            var workflowDefinition = new WorkflowDefinition
+            var workflowDefinition = new WorkflowDefinitionVersion
             {
                 Activities = new[]
                 {
-                    new ActivityDefinition<WriteLine>("activity-1", new { TextExpression = new PlainTextExpression("Hello world!")}),
-                    new ActivityDefinition<WriteLine>("activity-2", new { TextExpression = new PlainTextExpression("Goodbye cruel world...")})
+                    new ActivityDefinition<WriteLine>("activity-1", new { TextExpression = new LiteralExpression("Hello world!")}),
+                    new ActivityDefinition<WriteLine>("activity-2", new { TextExpression = new LiteralExpression("Goodbye cruel world...")})
                 },
                 Connections = new []
                 {
-                    new ConnectionDefinition("activity-1", "activity-2"), 
+                    new ConnectionDefinition("activity-1", "activity-2", OutcomeNames.Done), 
                 }
             };
             
-            // Invoke the workflow.
+            // Run the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflowDefinition);
+            await invoker.StartAsync(workflowDefinition);
 
             Console.ReadLine();
         }

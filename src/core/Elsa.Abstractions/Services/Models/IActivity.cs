@@ -1,7 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Results;
-using Elsa.Serialization.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
@@ -14,14 +15,27 @@ namespace Elsa.Services.Models
         JObject State { get; set; }
         
         /// <summary>
-        /// The type name of this activity.
+        /// Holds activity output.
         /// </summary>
-        string TypeName { get; }
+        Variables Output { get; set; }
+        
+        [JsonIgnore]
+        Variables TransientOutput { get; }
         
         /// <summary>
-        /// Unique identifier of this activity
+        /// The type name of this activity.
+        /// </summary>
+        string Type { get; }
+        
+        /// <summary>
+        /// Unique identifier of this activity.
         /// </summary>
         string Id { get; set; }
+        
+        /// <summary>
+        /// Name identifier of this activity.
+        /// </summary>
+        string Name { get; set; }
         
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
