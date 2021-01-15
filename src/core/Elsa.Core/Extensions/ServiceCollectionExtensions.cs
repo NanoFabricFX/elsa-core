@@ -1,46 +1,47 @@
-using Elsa.Expressions;
-using Elsa.Harvesters;
-using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
-using Elsa.Serialization.Tokenizers;
-using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
+using Elsa;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NodaTime;
 
-namespace Elsa.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
+        /// <summary>
+        /// Registers the specified service only if none already exists for the specified provider type.
+        /// </summary>
+        public static IServiceCollection TryAddProvider<TService, TProvider>(
+            this IServiceCollection services,
+            ServiceLifetime lifetime)
         {
-            services.TryAddSingleton<IIdGenerator, DefaultIdGenerator>();
-            services.TryAddSingleton<IClock>(SystemClock.Instance);
-            services.TryAddSingleton<IWorkflowSerializer, WorkflowSerializer>();
-            services.TryAddSingleton<IWorkflowTokenizer, WorkflowTokenizer>();
-            services.TryAddSingleton<IActivityHarvester, TypedActivityHarvester>();
-            services.TryAddSingleton<IActivityLibrary, ActivityLibrary>();
-            services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
-            services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
-            services.AddActivityDescriptors<ActivityDescriptors>();
-            services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
-            services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
-            services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
-            services.AddSingleton<ITokenizer, DefaultTokenizer>();
-            services.AddSingleton<ITokenizer, ActivityTokenizer>();
-            services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
-            services.AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
-            
+            return services.TryAddProvider(typeof(TService), typeof(TProvider), lifetime);
+        }
+
+        /// <summary>
+        /// Registers the specified service only if none already exists for the specified provider type.
+        /// </summary>
+        public static IServiceCollection TryAddProvider(
+            this IServiceCollection services,
+            Type serviceType,
+            Type providerType,
+            ServiceLifetime lifetime)
+        {
+            var descriptor = services.FirstOrDefault(
+                x => x.ServiceType == serviceType && x.ImplementationType == providerType
+            );
+
+            if (descriptor == null)
+            {
+                descriptor = new ServiceDescriptor(serviceType, providerType, lifetime);
+                services.Add(descriptor);
+            }
+
             return services;
         }
 
-        public static IServiceCollection AddWorkflowsInvoker(this IServiceCollection services)
-        {
-            services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
-            services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
-            services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();
-            services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
-
-            return services;
-        }
+        public static IServiceCollection Replace<TService, TImplementation>(this IServiceCollection services, ServiceLifetime lifetime) => services.Replace(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
+        public static bool HasService<T>(this IServiceCollection services) => services.Any(x => x.ServiceType == typeof(T));
+        public static bool HasService<T>(this ElsaOptions options) => options.Services.HasService<T>();
     }
 }

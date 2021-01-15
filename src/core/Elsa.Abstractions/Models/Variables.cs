@@ -1,19 +1,34 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Elsa.Models
 {
-    public class Variables : Dictionary<string, object>
-    {        
-        public static readonly Variables Empty = new Variables();
+    public class Variables
+    {
+        public Variables()
+        {
+            Data = new Dictionary<string, object?>();
+        }
 
-        public object GetVariable(string name)
+        public Variables(Variables other) : this(other.Data)
         {
-            return ContainsKey(name) ? this[name] : null; 
         }
-        
-        public T GetVariable<T>(string name)
+
+        public Variables(IDictionary<string, object?> data)
         {
-            return ContainsKey(name) ? (T)this[name] : default(T); 
+            Data = data;
         }
+
+        public IDictionary<string, object?> Data { get; set; }
+
+        public object? Get(string name) => Has(name) ? Data[name] : default;
+        public T? Get<T>(string name) => !Has(name) ? default : Get(name).ConvertTo<T>();
+
+        public Variables Set(string name, object? value)
+        {
+            Data[name] = value;
+            return this;
+        }
+
+        public bool Has(string name) => Data.ContainsKey(name);
     }
 }

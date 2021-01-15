@@ -1,13 +1,28 @@
 using Elsa.Activities.Http.Middleware;
-using Microsoft.AspNetCore.Builder;
+using Elsa.Activities.Http.RequestHandlers.Handlers;
+using Elsa.Activities.Http.Services;
 
-namespace Elsa.Activities.Http.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.AspNetCore.Builder
 {
     public static class ApplicationBuilderExtensions
     {
-        public static IApplicationBuilder UseHttpWorkflows(this IApplicationBuilder app)
+        public static IApplicationBuilder UseHttpActivities(this IApplicationBuilder app)
         {
-            return app.UseMiddleware<HttpRequestTriggerMiddleware>();
+            return app
+                .UseMiddleware<ReceiveHttpRequestMiddleware>()
+                .UseRequestHandler<SignalRequestHandler>("/workflows/signal");
+        }
+
+        public static IApplicationBuilder UseRequestHandler<THandler>(this IApplicationBuilder app) where THandler : IRequestHandler
+        {
+            return app.UseMiddleware<RequestHandlerMiddleware<THandler>>();
+        }
+
+        public static IApplicationBuilder UseRequestHandler<THandler>(this IApplicationBuilder app, string path) where THandler : IRequestHandler
+        {
+            return app
+                .Map(path, branch => branch.UseMiddleware<RequestHandlerMiddleware<THandler>>());
         }
     }
 }

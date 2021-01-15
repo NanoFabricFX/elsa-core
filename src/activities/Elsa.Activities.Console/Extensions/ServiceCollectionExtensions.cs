@@ -1,22 +1,24 @@
-using Elsa.Activities.Console.Drivers;
-using Elsa.Extensions;
-using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.IO;
+using Elsa;
+using Elsa.Activities.Console;
 
-namespace Elsa.Activities.Console.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddConsoleWorkflowDescriptors(this IServiceCollection services)
+        public static ElsaOptions AddConsoleActivities(this ElsaOptions options, TextReader? standardIn = default, TextWriter? standardOut = default)
         {
-            return services.AddActivityDescriptors<ActivityDescriptors>();
-        }
-        
-        public static IServiceCollection AddConsoleWorkflowDrivers(this IServiceCollection services)
-        {
-            return services
-                .AddConsoleWorkflowDescriptors()
-                .AddActivityDriver<ReadLineDriver>()
-                .AddActivityDriver<WriteLineDriver>();
+            options.Services
+                .AddSingleton(standardIn ?? Console.In)
+                .AddSingleton(standardOut ?? Console.Out);
+            
+            options
+                .AddActivity<ReadLine>()
+                .AddActivity<WriteLine>();
+
+            return options;
         }
     }
 }

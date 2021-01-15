@@ -1,14 +1,16 @@
-﻿namespace Elsa.Models
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+namespace Elsa.Models
 {
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum WorkflowStatus
     {
         Idle,
-        Starting,
-        Resuming,
-        Executing,
-        Halted,
+        Running,
         Finished,
+        Suspended,
         Faulted,
-        Aborted
+        Cancelled
     }
 }

@@ -1,35 +1,63 @@
-using AspNetCore.AsyncInitialization;
-using Elsa.Activities.Http.Drivers;
-using Elsa.Activities.Http.Initialization;
+using System;
+using Elsa;
+using Elsa.Activities.Http;
+using Elsa.Activities.Http.Handlers;
+using Elsa.Activities.Http.Options;
+using Elsa.Activities.Http.Parsers;
+using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
-using Elsa.Activities.Http.Services.Implementations;
-using Elsa.Extensions;
+using Elsa.Activities.Http.Triggers;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Elsa.Activities.Http.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttpWorkflowDescriptors(this IServiceCollection services)
+        public static ElsaOptions AddHttpActivities(this ElsaOptions options, Action<HttpActivityOptions>? configureOptions = null)
         {
-            return services.AddActivityDescriptors<ActivityDescriptors>();
+            options.Services.AddHttpServices(configureOptions);
+            options.AddHttpActivitiesInternal();
+            return options;
         }
 
-        public static IServiceCollection AddHttpWorkflowDrivers(this IServiceCollection services)
+        public static IServiceCollection AddHttpServices(this IServiceCollection services, Action<HttpActivityOptions>? configureOptions = null)
         {
-            services.AddHttpWorkflowDescriptors();
-            services.AddAsyncInitialization();
-            services.TryAddSingleton<IHttpWorkflowCache, DefaultHttpWorkflowCache>();
-            services.TryAddTransient<IAsyncInitializer, HttpWorkflowCacheInitializer>();
+            if (configureOptions != null)
+            {
+                services.Configure(configureOptions);
+            }
+
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            
+            services.AddHttpClient(nameof(SendHttpRequest));
+
             services
-                .AddActivityDriver<HttpRequestTriggerDriver>()
-                .AddActivityDriver<HttpResponseActionDriver>();
+                .AddSingleton<ITokenService, TokenService>()
+                .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
+                .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
+                .AddSingleton<IHttpRequestBodyParser, FormHttpRequestBodyParser>()
+                .AddSingleton<IHttpResponseBodyParser, DefaultHttpResponseBodyParser>()
+                .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
+                .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
+                .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+                .AddTriggerProvider<ReceiveHttpRequestTriggerProvider>()
+                .AddHttpContextAccessor()
+                .AddNotificationHandlers(typeof(HttpJavaScriptHandler))
+                .AddDataProtection();
             
-            return services;
+            return services
+                .AddRequestHandler<SignalRequestHandler>();
         }
+
+        private static ElsaOptions AddHttpActivitiesInternal(this ElsaOptions options) =>
+            options
+                .AddActivity<HttpRequestReceived>()
+                .AddActivity<WriteHttpResponse>()
+                .AddActivity<SendHttpRequest>()
+                .AddActivity<Redirect>();
+
+        public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services) where THandler : class, IRequestHandler => services.AddScoped<THandler>();
     }
 }

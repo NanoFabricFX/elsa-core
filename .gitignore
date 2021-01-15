@@ -34,7 +34,6 @@ packages/
 
 #Ignore git-related files
 *.orig
-.gitattributes
 
 #Rider
 .idea
@@ -51,4 +50,9 @@ node_modules/
 #github
 .github/
 
+#volatile
 App_Data/
+*.db
+
+# Fody - auto-generated XML schema
+FodyWeavers.xsd

@@ -1,21 +1,42 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Elsa.Services;
+using Elsa.Triggers;
+using Elsa.Extensions;
+using System.Reflection;
 
-namespace Elsa.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
-    {
-        public static IServiceCollection AddActivityDescriptors<T>(this IServiceCollection services)
-            where T : class, IActivityDescriptorProvider
+    {    
+        public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddTransient<IWorkflowProvider, T>();
+
+        public static IServiceCollection AddWorkflowContextProvider<T>(this IServiceCollection services) where T : class, IWorkflowContextProvider => services.AddTransient<IWorkflowContextProvider, T>();
+       
+        public static IServiceCollection AddWorkflowContextProvider(this IServiceCollection services, Assembly assembly)
         {
-            services.AddSingleton<IActivityDescriptorProvider, T>();
+            var workflowContextProviderType = typeof(IWorkflowContextProvider);
+            var types = assembly.GetAllWithInterface(workflowContextProviderType);
+
+            foreach (var type in types)
+            {
+                services.AddTransient(workflowContextProviderType, type);
+            }
+
             return services;
         }
-        
-        public static IServiceCollection AddActivityDriver<T>(this IServiceCollection services)
-            where T : class, IActivityDriver
-        {
-            services.AddSingleton<IActivityDriver, T>();
+
+        public static IServiceCollection AddTriggerProvider<T>(this IServiceCollection services) where T : class, ITriggerProvider => services.AddTransient<ITriggerProvider, T>();
+       
+        public static IServiceCollection AddTriggerProvider(this IServiceCollection services, Assembly assembly)
+        {         
+            var triggerProviderType = typeof(ITriggerProvider);
+            var types = assembly.GetAllWithInterface(triggerProviderType);
+
+            foreach (var type in types)
+            {
+                services.AddTransient(triggerProviderType, type);
+            }
+
             return services;
         }
     }

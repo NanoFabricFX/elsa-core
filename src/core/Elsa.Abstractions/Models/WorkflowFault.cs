@@ -1,8 +1,4 @@
 ﻿namespace Elsa.Models
 {
-    public class WorkflowFault
-    {
-        public IActivity FaultedActivity { get; set; }
-        public string Message { get; set; }
-    }
+    public record WorkflowFault(string? FaultedActivityId, string? Message, string? StackTrace);
 }
