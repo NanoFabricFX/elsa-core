@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Encodings.Web;
+﻿using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Fluid;
 
@@ -18,6 +17,6 @@ namespace Elsa.Scripting.Liquid.Services
         /// <summary>
         /// Validates a Liquid template.
         /// </summary>
-        bool Validate(string template, out IEnumerable<string> errors);
+        bool Validate(string template, out string error);
     }
 }

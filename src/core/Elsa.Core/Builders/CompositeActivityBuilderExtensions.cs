@@ -6,13 +6,11 @@ using Elsa.ActivityResults;
 using Elsa.Services.Models;
 
 // ReSharper disable ExplicitCallerInfoArgument
-
 namespace Elsa.Builders
 {
     public static class CompositeActivityBuilderExtensions
     {
-        public static IActivityBuilder StartWith(this ICompositeActivityBuilder builder, Action action, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)), null, lineNumber, sourceFile);
+        public static IActivityBuilder StartWith(this ICompositeActivityBuilder builder, Action action) => builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
         public static IActivityBuilder
             StartWith(this ICompositeActivityBuilder builder, Action<ActivityExecutionContext> action, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>

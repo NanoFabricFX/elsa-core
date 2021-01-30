@@ -41,6 +41,30 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 _semaphore.Release();
             }
         }
+        
+        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            await DbSet.AddAsync(entity, cancellationToken);
+            OnSaving(entity);
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
+        
+        public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            var list = entities.ToList();
+            await DbSet.AddRangeAsync(list, cancellationToken);
+            
+            foreach (var entity in list) 
+                OnSaving(entity);
+            
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            OnSaving(entity);
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
@@ -88,11 +112,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             var entity = await DbSet.FirstOrDefaultAsync(filter, cancellationToken);
             return entity != null ? ReadShadowProperties(entity) : default;
         }
-        
+
         protected virtual void OnSaving(T entity)
         {
         }
-        
+
         protected virtual void OnLoading(T entity)
         {
         }

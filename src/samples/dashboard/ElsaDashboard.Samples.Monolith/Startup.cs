@@ -1,8 +1,6 @@
 using System;
 using Elsa;
-using Elsa.Persistence.YesSql.Extensions;
-using Elsa.Runtime;
-using Elsa.StartupTasks;
+using Elsa.Persistence.YesSql;
 using ElsaDashboard.Backend.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -40,8 +38,7 @@ namespace ElsaDashboard.Samples.Monolith
 
             services
                 .AddElsaApiEndpoints()
-                .AddElsaSwagger()
-                .AddStartupTask<ResumeRunningWorkflowsTask>();
+                .AddElsaSwagger();
             
             // Elsa Dashboard.
             services.AddRazorPages();

@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Text;
+using Elsa.Activities.AzureServiceBus.Extensions;
+using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Azure.ServiceBus;
 
 namespace Elsa.Activities.AzureServiceBus
 {
@@ -25,12 +25,10 @@ namespace Elsa.Activities.AzureServiceBus
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
-        protected IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
+        private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var message = (Message) context.Input!;
-            var bytes = message.Body;
-            var json = Encoding.UTF8.GetString(bytes);
-            var model = _serializer.Deserialize(json, MessageType);
+            var message = (MessageModel) context.Input!;
+            var model = message.ReadBody(MessageType, _serializer);
 
             return Done(model);
         }

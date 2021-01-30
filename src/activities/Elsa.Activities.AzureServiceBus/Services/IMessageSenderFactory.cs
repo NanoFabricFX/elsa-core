@@ -8,9 +8,4 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         Task<IMessageSender> GetSenderAsync(string queueName, CancellationToken cancellationToken = default);
     }
-    
-    public interface IMessageReceiverFactory
-    {
-        Task<IMessageReceiver> GetReceiverAsync(string queueName, CancellationToken cancellationToken = default);
-    }
 }

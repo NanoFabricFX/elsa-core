@@ -1,8 +1,9 @@
 using System;
-using Elsa.Activities.AzureServiceBus.HostedServices;
+using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
-using Elsa.Activities.AzureServiceBus.Triggers;
+using Elsa.Activities.AzureServiceBus.StartupTasks;
+using Elsa.Runtime;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,10 +23,11 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             options.Services
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
-                .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()
-                .AddSingleton<IMessageReceiverFactory, MessageReceiverFactory>()
-                .AddHostedService<StartServiceBusQueues>()
-                .AddTriggerProvider<MessageReceivedTriggerProvider>();
+                .AddSingleton<MessageBusFactory>()
+                .AddSingleton<IMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
+                .AddSingleton<IMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
+                .AddStartupTask<StartServiceBusQueues>()
+                .AddBookmarkProvider<MessageReceivedBookmarkProvider>();
 
             options
                 .AddActivity<AzureServiceBusMessageReceived>()

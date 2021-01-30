@@ -1,7 +1,7 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Triggers;
+using Elsa.Bookmarks;
 
 namespace Elsa.Services
 {
@@ -10,13 +10,24 @@ namespace Elsa.Services
         /// <summary>
         /// Selects workflows and workflow instances based on the specified trigger predicate and enqueues the results for execution.
         /// </summary>
-        Task EnqueueWorkflowsAsync<TTrigger>(
-            Func<TTrigger, bool> predicate,
+        Task EnqueueWorkflowsAsync(
+            string activityType,
+            IBookmark bookmark,
+            string? tenantId,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
-            CancellationToken cancellationToken = default)
-            where TTrigger : ITrigger;
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Enqueues the specified workflows for execution.
+        /// </summary>
+        Task EnqueueWorkflowsAsync(
+            IEnumerable<BookmarkFinderResult> results,
+            object? input = default,
+            string? correlationId = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Enqueues the specified workflow instance and activity for execution.

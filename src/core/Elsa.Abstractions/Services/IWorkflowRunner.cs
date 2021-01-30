@@ -1,22 +1,30 @@
-using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 
 namespace Elsa.Services
 {
     public interface IWorkflowRunner
     {
-        Task TriggerWorkflowsAsync<TTrigger>(
-            Func<TTrigger, bool> predicate, 
+        Task TriggerWorkflowsAsync(
+            string activityType,
+            IBookmark bookmark,
+            string? tenantId,
             object? input = default, 
             string? correlationId = default, 
             string? contextId = default,
-            CancellationToken cancellationToken = default)
-            where TTrigger : ITrigger;
+            CancellationToken cancellationToken = default);
+
+        Task TriggerWorkflowsAsync(
+            IEnumerable<BookmarkFinderResult> results,
+            object? input = default,
+            string? correlationId = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
 
         ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,

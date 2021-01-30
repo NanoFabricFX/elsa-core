@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Data;
+using Elsa.Persistence.YesSql.Data;
 using Elsa.Services;
 using YesSql;
 
@@ -14,6 +14,8 @@ namespace Elsa.Persistence.YesSql.Services
         {
             _store = store;
         }
+
+        public int Order => 0;
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {

@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Data;
+using Elsa.Persistence.YesSql.Data;
 using Elsa.Services;
 
 namespace Elsa.Persistence.YesSql.Services
@@ -13,6 +13,8 @@ namespace Elsa.Persistence.YesSql.Services
         {
             _dataMigrationManager = dataMigrationManager;
         }
+
+        public int Order => 0;
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default) =>
             await _dataMigrationManager.RunAllAsync();
