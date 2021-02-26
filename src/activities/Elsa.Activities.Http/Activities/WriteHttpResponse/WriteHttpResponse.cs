@@ -64,10 +64,11 @@ namespace Elsa.Activities.Http
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var response = _httpContextAccessor.HttpContext.Response;
+            var httpContext = _httpContextAccessor.HttpContext ?? new DefaultHttpContext();
+            var response = httpContext.Response;
 
             if (response.HasStarted)
-                return Fault(T["Response has already started"]);
+                return Fault(T["Response has already started"]!);
 
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;

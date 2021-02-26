@@ -6,7 +6,7 @@
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/2.0.0-preview5-0)
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)](https://www.myget.org/gallery/elsa-2)
-[![Build status](https://ci.appveyor.com/api/projects/status/wix4v6o2inamn153?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa-2-builds)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/elsa-workflows/elsa-core?svg=true&branch=feature/elsa-2.0)](https://ci.appveyor.com/project/sfmskywalker/elsa)
 [![Gitter](https://badges.gitter.im/elsa-workflows/community.svg)](https://gitter.im/elsa-workflows/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 ![Docker Pulls](https://img.shields.io/docker/pulls/elsaworkflows/elsa-dashboard?label=elsa%20dashboard%3Adocker%20pulls)
@@ -53,6 +53,7 @@ Version 2.0
 - [ ] Lucene Indexing
 - [ ] New Workflow Designer + Dashboard
 - [ ] Generic Command & Event Activities
+- [ ] Job Activities (simplify kicking off a background process while the workflow sleeps & gets resumed once job finishes)
 
 Version 3.0
 - [ ] Composite Activity Definitions (with designer support)
@@ -63,14 +64,12 @@ Version 3.0
 
 ## Workflow Designer
 
-Workflows can be visually designed using [Elsa Designer](https://github.com/elsa-workflows/elsa-designer-html), a reusable & extensible HTML5 web component built with [StencilJS](https://stenciljs.com/).
+Workflows can be visually designed using the Elsa Designer, a reusable & extensible HTML5 web component built with [StencilJS](https://stenciljs.com/).
 To manage workflow definitions and instances, Elsa comes with a reusable Razor Class Library that provides a dashboard application in the form of an MVC area that you can include in your own ASP.NET Core application.
-
-![Web-based workflow designer](/doc/dashboard-sample-1.png)
 
 ## Programmatic Workflows
 
-Workflows can be created programmatically and then executed using `IWorkflowRunner`.
+Workflows can be created programmatically and then executed using `IWorkflowRunner` or scheduled for execution using `IWorkflowQueue`.
 
 ### Hello World
 The following code snippet demonstrates creating a workflow with two WriteLine activities from code and then invoking it:
@@ -121,12 +120,14 @@ This models is then serialized to JSON and deserialized back into the model
 var services = new ServiceCollection()
     .AddElsa()
 
-    // For tests
-    .AddElsaPersistenceInMemory()
-    // For productive use
-    .AddElsaPersistenceYesSql((sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted))
 
-    .AddConsoleActivities()
+    // For production use.
+    .UseYesSqlPersistence()
+    
+    // Or use any of the other supported persistence providers such as EF Core or MongoDB:
+    // .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+    // .UseMongoDbPersistence()
+
     .BuildServiceProvider();
 
 // Run startup actions (not needed when registering Elsa with a Host).
@@ -182,7 +183,7 @@ await workflowRunner.RunWorkflowAsync(workflowBlueprint);
 
 ## Persistence
 
-Elsa uses [YesSql](https://github.com/sebastienros/yessql) as the ORM of choice for data access, offering the most flexibility in terms of custom querying capabilities (using map/reduce index providers).
+Elsa abstractes away data access, which means you can use any persistence provider you prefer. 
 
 ## Long Running Workflows
 

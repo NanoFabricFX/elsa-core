@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -16,20 +15,20 @@ namespace Elsa.Server.Api.Services
     {
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IMapper _mapper;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public WorkflowBlueprintMapper(IWorkflowBlueprintReflector workflowBlueprintReflector, IMapper mapper, IServiceProvider serviceProvider)
+        public WorkflowBlueprintMapper(IWorkflowBlueprintReflector workflowBlueprintReflector, IMapper mapper, IServiceScopeFactory serviceScopeFactory)
         {
             _workflowBlueprintReflector = workflowBlueprintReflector;
             _mapper = mapper;
-            _serviceProvider = serviceProvider;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async ValueTask<WorkflowBlueprintModel> MapAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default)
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScope();
 
-            var wrapper = await _workflowBlueprintReflector.ReflectAsync(scope, workflowBlueprint, cancellationToken);
+            var wrapper = await _workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflowBlueprint, cancellationToken);
             var activityProperties = await Task.WhenAll(wrapper.Activities.Select(async x => (x.ActivityBlueprint.Id, await GetActivityPropertiesAsync(wrapper, x, cancellationToken))));
             var activityPropertyDictionary = activityProperties.ToDictionary(x => x.Id, x => x.Item2);
             return _mapper.Map<WorkflowBlueprintModel>(workflowBlueprint, options => options.Items[ActivityBlueprintConverter.ActivityPropertiesKey] = activityPropertyDictionary);

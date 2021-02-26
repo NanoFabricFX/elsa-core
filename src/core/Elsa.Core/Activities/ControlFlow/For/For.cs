@@ -14,10 +14,10 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class For : Activity
     {
-        [ActivityProperty(Hint = "An expression that evaluates to the starting number.")]
+        [ActivityProperty(Hint = "The starting number.")]
         public long Start { get; set; }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the ending number.")]
+        [ActivityProperty(Hint = "The ending number.")]
         public long End { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.")]
@@ -26,14 +26,27 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(Hint = "The operator to use when comparing the current value against the end value.")]
         public Operator Operator { get; set; } = Operator.LessThan;
 
-        private long? CurrentValue
+        internal long? CurrentValue
         {
             get => GetState<long?>();
             set => SetState(value);
         }
 
+        private bool Break
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            if (Break)
+            {
+                CurrentValue = null;
+                Break = false;
+                return Done();
+            }
+            
             var currentValue = CurrentValue ?? Start;
             
             var loop = Operator switch
@@ -47,8 +60,10 @@ namespace Elsa.Activities.ControlFlow
 
             if (loop)
             {
-                context.WorkflowInstance.Scopes.Push(Id);
                 CurrentValue = currentValue + Step;
+                var scope = context.CreateScope();
+                
+                scope.Variables.Set(nameof(CurrentValue), currentValue);
                 return Outcome(OutcomeNames.Iterate, currentValue);
             }
 

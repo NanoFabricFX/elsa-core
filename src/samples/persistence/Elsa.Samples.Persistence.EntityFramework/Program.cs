@@ -5,7 +5,6 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.Persistence.EntityFramework
@@ -18,10 +17,7 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     // Configure Elsa to use the Entity Framework Core persistence provider using Sqlite.
-                    .UseEntityFrameworkPersistence(ef =>
-                    {
-                        ef.UseSqlite("Data Source=elsa.db;Cache=Shared", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name));
-                    }, true)
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddWorkflow<HelloWorld>())
                 .AddAutoMapperProfiles<Program>()

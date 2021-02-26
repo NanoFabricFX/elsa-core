@@ -1,6 +1,7 @@
 using System;
 using Elsa;
-using Elsa.Persistence.YesSql;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.Sqlite;
 using ElsaDashboard.Backend.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -28,7 +29,8 @@ namespace ElsaDashboard.Samples.Monolith
             
             services
                 .AddElsa(options => options
-                    .UseYesSqlPersistence()
+                    //.UseYesSqlPersistence()
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
@@ -51,6 +53,10 @@ namespace ElsaDashboard.Samples.Monolith
                     options.DetailedErrors = !Environment.IsProduction();
                     options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(30);
                 });
+            
+            // Allow arbitrary client browser apps to access the API for demo purposes only.
+            // In a production environment, make sure to allow only origins you trust.
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -74,10 +80,10 @@ namespace ElsaDashboard.Samples.Monolith
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();
+            app.UseHttpActivities();
             app.UseCors();
             app.UseRouting();
             app.UseElsaGrpcServices();
-            app.UseHttpActivities();
             
             app.UseEndpoints(endpoints =>
             {

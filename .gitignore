@@ -53,6 +53,16 @@ node_modules/
 #volatile
 App_Data/
 *.db
+*.db-shm
+*.db-wal
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Elsa Stencil Components
+src/designer/elsa-workflows-studio/dist
+src/designer/elsa-workflows-studio/www
+src/designer/elsa-workflows-studio/loader
+
+# Created by developers using GNU/Linux
+.directory

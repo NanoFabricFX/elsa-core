@@ -9,7 +9,6 @@ using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
 using Microsoft.Extensions.Logging;
 using YesSql;
-using YesSql.Services;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores
@@ -28,8 +27,6 @@ namespace Elsa.Persistence.YesSql.Stores
             {
                 EntityIdSpecification<WorkflowDefinition> s => Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id),
                 VersionOptionsSpecification s => Query<WorkflowDefinitionIndex>().WithVersion(s.VersionOptions),
-                WorkflowDefinitionIdSpecification s => s.VersionOptions == null ? Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id) : Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id).WithVersion(s.VersionOptions),
-                ManyWorkflowDefinitionVersionIdsSpecification s => Query<WorkflowDefinitionIndex>(x => x.DefinitionVersionId.IsIn(s.Ids)),
                 _ => AutoMapSpecification<WorkflowDefinitionIndex>(specification)
             };
         }

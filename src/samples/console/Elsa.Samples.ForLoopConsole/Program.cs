@@ -15,7 +15,7 @@ namespace Elsa.Samples.ForLoopConsole
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     .AddConsoleActivities()
-                    .AddWorkflow<LoopingWorkflow>())
+                    .AddWorkflow<ForLoopWorkflow>())
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).
@@ -26,7 +26,7 @@ namespace Elsa.Samples.ForLoopConsole
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Execute the workflow.
-            await workflowRunner.RunWorkflowAsync<LoopingWorkflow>();
+            await workflowRunner.RunWorkflowAsync<ForLoopWorkflow>();
         }
     }
 }

@@ -2,6 +2,7 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
+using Elsa.Services.Models;
 
 namespace Elsa.Samples.SwitchConsole
 {
@@ -14,34 +15,23 @@ namespace Elsa.Samples.SwitchConsole
             _random = new Random();
         }
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("--Grayscale Calculator--").WithName("Start")
                 .WriteLine("Enter a number between 0 and 100.")
                 .ReadLine()
-                .Switch(cases =>
-                    {
-                        var input = cases.Context.GetInput<int>();
-                        cases
-                            .Add("Black", input >= 0 && input < 20)
-                            .Add("Dark Gray", input >= 20 && input < 50)
-                            .Add("Light Gray", input >= 50 && input < 70)
-                            .Add("Gray", input >= 20 && input < 70)
-                            .Add("White", input >= 70 && input <= 100)
-                            .Add("Invalid", input < 0 || input > 100);
-                    },
-                    SwitchMode.MatchFirst,
-                    ifThen =>
-                    {
-                        ifThen.When("Black").WriteLine("That number is black");
-                        ifThen.When("Dark Gray").WriteLine("That number is dark gray");
-                        ifThen.When("Light Gray").WriteLine("That number is light gray");
-                        ifThen.When("Gray").WriteLine("That number is gray");
-                        ifThen.When("White").WriteLine("That number is white");
-                        ifThen.When("Invalid").WriteLine("That number is invalid");
-                    })
-                .WriteLine("Goodbye");
+                .Switch(cases => cases
+                    .Add(context => GetNumber(context) >= 0 && GetNumber(context) < 20, @case => @case.WriteLine("That number is black"))
+                    .Add(context => GetNumber(context) >= 20 && GetNumber(context) < 50, @case => @case.WriteLine("That number is dark gray"))
+                    .Add(context => GetNumber(context) >= 50 && GetNumber(context) < 70, @case => @case.WriteLine("That number is light gray"))
+                    .Add(context => GetNumber(context) >= 20 && GetNumber(context) < 70, @case => @case.WriteLine("That number is gray"))
+                    .Add(context => GetNumber(context) >= 70 && GetNumber(context) <= 100, @case => @case.WriteLine("That number is white"))
+                    .Add(context => GetNumber(context) < 0 || GetNumber(context) > 100, @case => @case.WriteLine("That number is invalid"))
+                )
+                .WriteLine("Thanks for playing!");
         }
+
+        private static int GetNumber(ActivityExecutionContext context) => context.GetInput<int>();
     }
 }

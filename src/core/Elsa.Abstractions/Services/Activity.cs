@@ -19,7 +19,7 @@ namespace Elsa.Services
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
-        public JObject Data { get; set; } = new();
+        public virtual JObject Data { get; set; } = new();
         public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context) => OnCanExecuteAsync(context);
         public ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context) => OnExecuteAsync(context);
         public ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context) => OnResumeAsync(context);
@@ -46,6 +46,7 @@ namespace Elsa.Services
         protected ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) => new(activities);
         protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new(results);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new(results);
+        protected FaultResult Fault(Exception exception) => new(exception);
         protected FaultResult Fault(string message) => new(message);
         
         protected T? GetState<T>([CallerMemberName] string name = null!) => Data.GetState<T>(name);

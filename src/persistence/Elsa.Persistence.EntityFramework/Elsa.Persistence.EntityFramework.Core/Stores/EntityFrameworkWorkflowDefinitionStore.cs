@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
@@ -12,15 +13,14 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowDefinitionStore(ElsaContext dbContext, IContentSerializer contentSerializer) : base(dbContext)
+        public EntityFrameworkWorkflowDefinitionStore(IDbContextFactory<ElsaContext> dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
         }
-
-        protected override DbSet<WorkflowDefinition> DbSet => DbContext.WorkflowDefinitions;
+        
         protected override Expression<Func<WorkflowDefinition, bool>> MapSpecification(ISpecification<WorkflowDefinition> specification) => AutoMapSpecification(specification);
 
-        protected override void OnSaving(WorkflowDefinition entity)
+        protected override void OnSaving(ElsaContext dbContext, WorkflowDefinition entity)
         {
             var data = new
             {
@@ -32,10 +32,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             };
             
             var json = _contentSerializer.Serialize(data);
-            DbContext.Entry(entity).Property("Data").CurrentValue = json;
+            dbContext.Entry(entity).Property("Data").CurrentValue = json;
         }
 
-        protected override void OnLoading(WorkflowDefinition entity)
+        protected override void OnLoading(ElsaContext dbContext, WorkflowDefinition entity)
         {
             var data = new
             {
@@ -46,7 +46,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.CustomAttributes
             };
             
-            var json = (string)DbContext.Entry(entity).Property("Data").CurrentValue;
+            var json = (string)dbContext.Entry(entity).Property("Data").CurrentValue;
             data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings());
 
             entity.Activities = data.Activities;

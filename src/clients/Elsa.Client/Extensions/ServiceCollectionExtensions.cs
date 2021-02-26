@@ -6,7 +6,6 @@ using Elsa.Client.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
@@ -24,6 +23,44 @@ namespace Elsa.Client.Extensions
             else
                 services.ConfigureOptions<ElsaClientOptions>();
 
+            var refitSettings = CreateRefitSettings();
+
+            services
+                .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWorkflowRegistryApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory);
+
+            return services
+                .AddTransient<IElsaClient, ElsaClient>();
+        }
+
+        public static IServiceCollection AddApiClient<T>(this IServiceCollection services, Func<HttpClient>? httpClientFactory) where T : class
+        {
+            var refitSettings = CreateRefitSettings();
+            return services.AddApiClient<T>(refitSettings, httpClientFactory);
+        }
+
+        public static IServiceCollection AddApiClient<T>(this IServiceCollection services, RefitSettings refitSettings, Func<HttpClient>? httpClientFactory) where T : class
+        {
+            if (httpClientFactory == null)
+            {
+                services.AddRefitClient<T>(refitSettings).ConfigureHttpClient((sp, client) =>
+                {
+                    var serverUrl = sp.GetRequiredService<IOptions<ElsaClientOptions>>().Value.ServerUrl;
+                    client.BaseAddress = serverUrl;
+                });
+            }
+            else
+            {
+                services.AddScoped(_ => RestService.For<T>(httpClientFactory(), refitSettings));
+            }
+
+            return services;
+        }
+
+        public static RefitSettings CreateRefitSettings()
+        {
             var serializerSettings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore,
@@ -43,41 +80,14 @@ namespace Elsa.Client.Extensions
             };
 
             serializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            serializerSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
+            serializerSettings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
             serializerSettings.Converters.Add(new TypeConverter());
             serializerSettings.Converters.Add(new VersionOptionsConverter());
 
-            var refitSettings = new RefitSettings
+            return new RefitSettings
             {
                 ContentSerializer = new NewtonsoftJsonContentSerializer(serializerSettings)
             };
-
-            services
-                .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
-                .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory)
-                .AddApiClient<IWorkflowRegistryApi>(refitSettings, httpClientFactory)
-                .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory);
-
-            return services
-                .AddTransient<IElsaClient, ElsaClient>();
-        }
-
-        private static IServiceCollection AddApiClient<T>(this IServiceCollection services, RefitSettings refitSettings, Func<HttpClient>? httpClientFactory) where T : class
-        {
-            if (httpClientFactory == null)
-            {
-                services.AddRefitClient<T>(refitSettings).ConfigureHttpClient((sp, client) =>
-                {
-                    var serverUrl = sp.GetRequiredService<IOptions<ElsaClientOptions>>().Value.ServerUrl;
-                    client.BaseAddress = serverUrl;
-                });
-            }
-            else
-            {
-                services.AddScoped(_ => RestService.For<T>(httpClientFactory(), refitSettings));
-            }
-
-            return services;
         }
     }
 }

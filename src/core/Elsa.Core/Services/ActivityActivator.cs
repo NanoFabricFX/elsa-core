@@ -16,7 +16,7 @@ namespace Elsa.Services
         
         public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type)
         {
-            var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceScope.ServiceProvider);
+            var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceProvider);
             activity.Data = context.GetData();
             activity.Id = context.ActivityId;
 
@@ -32,13 +32,17 @@ namespace Elsa.Services
             if (IsReturningComposite(activity))
                 return false;
 
-            if (IsReturningIfElse(activity))
+            if (IsReturningIf(activity))
+                return false;
+            
+            if (IsReturningSwitch(activity))
                 return false;
 
             return true;
         }
         
         private bool IsReturningComposite(IActivity activity) => activity is CompositeActivity && activity.Data.GetState<bool>(nameof(CompositeActivity.IsScheduled));
-        private bool IsReturningIfElse(IActivity activity) => activity is IfElse && activity.Data.GetState<bool>(nameof(IfElse.EnteredScope));
+        private bool IsReturningIf(IActivity activity) => activity is If && activity.Data.GetState<bool>(nameof(If.EnteredScope));
+        private bool IsReturningSwitch(IActivity activity) => activity is Switch && activity.Data.GetState<bool>(nameof(Switch.EnteredScope));
     }
 }

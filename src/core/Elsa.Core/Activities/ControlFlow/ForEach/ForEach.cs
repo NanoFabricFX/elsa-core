@@ -16,40 +16,46 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class ForEach : Activity
     {
-        [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
+        [ActivityProperty(Hint = "A collection of items to iterate over.")]
         public ICollection<object> Items { get; set; } = new Collection<object>();
-
-        private IList<object>? ItemsCopy
-        {
-            get => GetState<IList<object>>();
-            set => SetState(value);
-        }
-
+        
         private int? CurrentIndex
         {
             get => GetState<int?>();
             set => SetState(value);
         }
         
+        private bool Break
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
+        
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var collection = ItemsCopy;
-
-            if (collection == null)
-                ItemsCopy = collection = Items.ToList();
-
+            if (Break)
+            {
+                CurrentIndex = null;
+                Break = false;
+                return Done();
+            }
+            
+            var collection = Items.ToList();
             var currentIndex = CurrentIndex ?? 0;
 
-            if (currentIndex < collection.Count)
+            if (currentIndex < collection.Count - 1)
             {
-                var output = collection[currentIndex];
+                var currentValue = collection[currentIndex];
+                var scope = context.CreateScope();
+
+                scope.Variables.Set("CurrentIndex", currentIndex);
+                scope.Variables.Set("CurrentValue", currentValue);
+                
                 CurrentIndex = currentIndex + 1;
-                context.WorkflowInstance.Scopes.Push(Id);
-                return Combine(Outcome(OutcomeNames.Iterate, output));
+                return Combine(Outcome(OutcomeNames.Iterate, currentValue));
             }
 
             CurrentIndex = null;
-            ItemsCopy = null;
             return Done();
         }
     }

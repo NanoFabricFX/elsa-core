@@ -7,20 +7,20 @@ namespace Elsa.Samples.GoBackConsole.Workflows
 {
     public class WalkAroundWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("Taking a stroll...")
-                .IfElse(context => (string?)context.Input == "Brick Wall",
-                    ifElse =>
+                .If(context => (string?)context.Input == "Brick Wall",
+                    @if =>
                     {
-                        ifElse
-                            .When(IfElse.False)
+                        @if
+                            .When(If.False)
                             .WriteLine("Hitting a wall...")
                             .Then<BrickWallActivity>();
 
-                        ifElse
-                            .When(IfElse.True)
+                        @if
+                            .When(If.True)
                             .WriteLine("Going around the wall...")
                             .WriteLine("Made it!");
                     });

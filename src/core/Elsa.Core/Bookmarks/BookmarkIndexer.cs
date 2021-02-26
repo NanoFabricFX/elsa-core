@@ -10,7 +10,6 @@ using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
@@ -61,7 +60,7 @@ namespace Elsa.Bookmarks
             var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
             await DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
 
-            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToDictionaryAsync(x => (x.Id, x.Version), cancellationToken);
+            var workflowBlueprints = (await _workflowRegistry.ListAsync(cancellationToken)).ToDictionary(x => (x.Id, x.Version));
             var entities = new List<Bookmark>();
             
             foreach (var workflowInstance in workflowInstanceList.Where(x => x.WorkflowStatus == WorkflowStatus.Suspended))
@@ -124,8 +123,7 @@ namespace Elsa.Bookmarks
             CancellationToken cancellationToken)
         {
             // Setup workflow execution context
-            var scope = _serviceProvider.CreateScope();
-            var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance);
+            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
 
             // Load workflow context.
             workflowExecutionContext.WorkflowContext =
@@ -140,7 +138,7 @@ namespace Elsa.Bookmarks
 
             foreach (var blockingActivity in blockingActivities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, blockingActivity, null, cancellationToken);
+                var activityExecutionContext = new ActivityExecutionContext(_serviceProvider, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
                 var providerContext = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowInstance);
                 var providers = _providers.Where(x => x.ForActivityType == blockingActivity.Type);
 
