@@ -2,7 +2,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Events;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
@@ -22,7 +24,7 @@ namespace Elsa.Activities.ControlFlow
         public const string True = "True";
         public const string False = "False";
 
-        [ActivityProperty(Hint = "The condition to evaluate.")]
+        [ActivityProperty(Hint = "The condition to evaluate.", UIHint = ActivityPropertyUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool Condition { get; set; }
 
         public bool EnteredScope
@@ -53,12 +55,12 @@ namespace Elsa.Activities.ControlFlow
 
         public Task Handle(ScopeEvicted notification, CancellationToken cancellationToken)
         {
-            if (notification.EvictedScope.Type != nameof(If)) 
+            if (notification.EvictedScope.Type != nameof(If))
                 return Task.CompletedTask;
-            
+
             var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());
             data.SetState(nameof(EnteredScope), false);
-            
+
             return Task.CompletedTask;
         }
     }

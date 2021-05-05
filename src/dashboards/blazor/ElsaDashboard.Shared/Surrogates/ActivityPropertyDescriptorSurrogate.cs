@@ -1,8 +1,6 @@
 using Elsa.Client.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 using ProtoBuf;
 
 namespace ElsaDashboard.Shared.Surrogates
@@ -10,24 +8,15 @@ namespace ElsaDashboard.Shared.Surrogates
     [ProtoContract(IgnoreListHandling = true)]
     public class ActivityPropertyDescriptorSurrogate
     {
-        private static readonly JsonSerializerSettings SerializerSettings;
-
-        static ActivityPropertyDescriptorSurrogate()
-        {
-            SerializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-        }
-
-        public ActivityPropertyDescriptorSurrogate()
-        {
-        }
-
         public ActivityPropertyDescriptorSurrogate(ActivityPropertyDescriptor value)
         {
             Name = value.Name;
-            Type = value.Type;
+            Type = value.UIHint;
             Label = value.Label;
             Hint = value.Hint;
-            Options = value.Options != null ? JsonConvert.SerializeObject(value.Options, SerializerSettings) : default;
+            Options = value.Options?.ToString(Formatting.None);
+            Category = value.Category;
+            DefaultValue = value.DefaultValue?.ToString(Formatting.None);
         }
 
         [ProtoMember(1)] public string? Name { get; }
@@ -35,16 +24,20 @@ namespace ElsaDashboard.Shared.Surrogates
         [ProtoMember(3)] public string? Label { get; }
         [ProtoMember(4)] public string? Hint { get; }
         [ProtoMember(5)] public string? Options { get; }
+        [ProtoMember(6)] public string? Category { get; }
+        [ProtoMember(7)] public string? DefaultValue { get; }
 
         public static implicit operator ActivityPropertyDescriptor?(ActivityPropertyDescriptorSurrogate? surrogate) =>
             surrogate != null
                 ? new ActivityPropertyDescriptor
                 {
                     Name = surrogate.Name!,
-                    Type = surrogate.Type!,
+                    UIHint = surrogate.Type!,
                     Hint = surrogate.Hint,
                     Label = surrogate.Label,
-                    Options = !string.IsNullOrEmpty(surrogate.Options) ? JsonConvert.DeserializeObject<JObject>(surrogate.Options) : new JObject()
+                    Options = surrogate.Options is null or "" ? default : JToken.Parse(surrogate.Options),
+                    Category = surrogate.Category,
+                    DefaultValue = surrogate.DefaultValue is null or "" ? default : JToken.Parse(surrogate.DefaultValue)
                 }
                 : default;
 

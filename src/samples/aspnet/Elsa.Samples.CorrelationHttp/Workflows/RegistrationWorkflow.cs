@@ -18,13 +18,13 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
         {
             builder
                 // Configure a Receive HTTP Request trigger that executes on incoming HTTP POST requests.
-                .HttpRequestReceived(activity => activity.WithPath("/register").WithMethod(HttpMethods.Post).WithTargetType<Registration>())
+                .HttpEndpoint(activity => activity.WithPath("/register").WithMethod(HttpMethods.Post).WithTargetType<Registration>())
                 
                 // Store the registration as a workflow variable for easier access.
                 .SetVariable(context => (Registration)((HttpRequestModel)(context.Input))?.Body)
                 
                 // Correlate the workflow by email address.
-                .Correlate(context => context.GetVariable<Registration>().Email)
+                .Correlate(context => context.GetVariable<Registration>()!.Email)
 
                 // Write an HTTP response with a hyperlink to continue the workflow (notice the presence of the "correlation" query string parameter). 
                 .WriteHttpResponse(activity => activity
@@ -32,13 +32,13 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
                     .WithContentType("text/html")
                     .WithContent(context =>
                     {
-                        var registration = context.GetVariable<Registration>();
+                        var registration = context.GetVariable<Registration>()!;
                         return $"Welcome onboard, {registration.Name}! Please <a href=\"http://localhost:8201/confirm?correlation={registration.Email}\">confirm your registration</a>";
                     }))
                 
                 // Configure another Receive HTTP Request trigger that executes on incoming HTTP GET requests.
                 // This will cause the workflow to become suspended and executed once the request comes in.
-                .HttpRequestReceived(activity => activity.WithPath("/confirm"))
+                .HttpEndpoint(activity => activity.WithPath("/confirm"))
                 
                 // Write an HTTP response with a thank-you note.
                 // Notice that the correct workflow instance is resumed base on the incoming correlation ID.

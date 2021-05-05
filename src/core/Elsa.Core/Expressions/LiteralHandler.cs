@@ -8,8 +8,7 @@ namespace Elsa.Expressions
 {
     public class LiteralHandler : IExpressionHandler
     {
-        public const string SyntaxName = "Literal";
-        public string Syntax => SyntaxName;
+        public string Syntax => SyntaxNames.Literal;
 
         public Task<object?> EvaluateAsync(
             string expression,
@@ -17,9 +16,12 @@ namespace Elsa.Expressions
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            if (returnType == typeof(string))
+            if (returnType == typeof(string) || returnType == typeof(object))
                 return Task.FromResult<object?>(expression);
 
+            if (string.IsNullOrWhiteSpace(expression))
+                return Task.FromResult((object?) null);
+            
             var converter = TypeDescriptor.GetConverter(returnType);
             var value = converter.CanConvertFrom(typeof(string)) ? converter.ConvertFrom(expression) : default;
             return Task.FromResult(value)!;

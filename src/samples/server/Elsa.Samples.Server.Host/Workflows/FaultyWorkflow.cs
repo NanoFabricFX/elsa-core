@@ -23,7 +23,7 @@ namespace Elsa.Samples.Server.Host.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .HttpRequestReceived("/faulty")
+                .HttpEndpoint("/faulty")
                 .Then(MaybeThrow)
                 .WriteHttpResponse(response => response.WithStatusCode(HttpStatusCode.OK).WithContentType("application/json").WithContent(WriteWorkflowInfoAsync));
         }
@@ -31,7 +31,7 @@ namespace Elsa.Samples.Server.Host.Workflows
         private void MaybeThrow(ActivityExecutionContext context)
         {
             var model = context.GetInput<HttpRequestModel>()!;
-            var fault = model.QueryString.GetItem("fault")?.Value == "true";
+            var fault = model.QueryString.GetItem("fault") == "true";
 
             if (fault)
                 throw new Exception("This is quite a serious fault!");

@@ -3,19 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
-using Elsa.Bookmarks;
-using Elsa.Builders;
 using Elsa.Events;
-using Elsa.Exceptions;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
@@ -26,141 +20,27 @@ namespace Elsa.Services
         private static readonly ActivityOperation Execute = (context, activity) => activity.ActivityType.ExecuteAsync(context);
         private static readonly ActivityOperation Resume = (context, activity) => activity.ActivityType.ResumeAsync(context);
 
-        private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowFactory _workflowFactory;
-        private readonly IBookmarkFinder _bookmarkFinder;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IWorkflowContextManager _workflowContextManager;
-        private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IMediator _mediator;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
 
         public WorkflowRunner(
-            IWorkflowRegistry workflowRegistry,
-            IWorkflowFactory workflowFactory,
-            IBookmarkFinder bookmarkFinder,
-            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowContextManager workflowContextManager,
-            Func<IWorkflowBuilder> workflowBuilderFactory,
             IMediator mediator,
             IServiceScopeFactory serviceScopeFactory,
-            ILogger<WorkflowRunner> logger)
+            ILogger<WorkflowRunner> logger,
+            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
-            _workflowRegistry = workflowRegistry;
-            _workflowFactory = workflowFactory;
-            _workflowBuilderFactory = workflowBuilderFactory;
             _mediator = mediator;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
-            _workflowInstanceManager = workflowInstanceStore;
+            _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
             _workflowContextManager = workflowContextManager;
-            _bookmarkFinder = bookmarkFinder;
         }
 
-        public async Task TriggerWorkflowsAsync(
-            string activityType,
-            IBookmark bookmark,
-            string? tenantId,
-            object? input = default,
-            string? correlationId = default,
-            string? contextId = default,
-            CancellationToken cancellationToken = default)
-        {
-            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
-            await TriggerWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
-        }
-
-        public async Task TriggerWorkflowsAsync(
-            IEnumerable<BookmarkFinderResult> results,
-            object? input = default,
-            string? correlationId = default,
-            string? contextId = default,
-            CancellationToken cancellationToken = default)
-        {
-            foreach (var result in results)
-            {
-                var workflowInstance = await _workflowInstanceManager.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
-                await RunWorkflowAsync(workflowInstance!, result.ActivityId, input, cancellationToken);
-            }
-        }
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
-            IWorkflowBlueprint workflowBlueprint,
-            string? activityId = default,
-            object? input = default,
-            string? correlationId = default,
-            string? contextId = default,
-            CancellationToken cancellationToken = default)
-        {
-            var workflowInstance = await _workflowFactory.InstantiateAsync(
-                workflowBlueprint,
-                correlationId,
-                contextId,
-                cancellationToken);
-
-            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
-        }
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
-            string? activityId = default,
-            object? input = default,
-            string? correlationId = default,
-            string? contextId = default,
-            CancellationToken cancellationToken = default)
-            where T : IWorkflow =>
-            await RunWorkflowAsync(_workflowBuilderFactory().Build<T>(), activityId, input, correlationId, contextId, cancellationToken);
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
-            WorkflowInstance workflowInstance,
-            string? activityId = default,
-            object? input = default,
-            CancellationToken cancellationToken = default)
-            where T : IWorkflow =>
-            await RunWorkflowAsync(_workflowBuilderFactory().Build<T>(), workflowInstance, activityId, input, cancellationToken);
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
-            IWorkflow workflow,
-            string? activityId = default,
-            object? input = default,
-            string? correlationId = default,
-            string? contextId = default,
-            CancellationToken cancellationToken = default)
-        {
-            var workflowBlueprint = _workflowBuilderFactory().Build(workflow);
-            return await RunWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken);
-        }
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
-            IWorkflow workflow,
-            WorkflowInstance workflowInstance,
-            string? activityId = default,
-            object? input = default,
-            CancellationToken cancellationToken = default)
-        {
-            var workflowBlueprint = _workflowBuilderFactory().Build(workflow);
-            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
-        }
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
-            WorkflowInstance workflowInstance,
-            string? activityId = default,
-            object? input = default,
-            CancellationToken cancellationToken = default)
-        {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(
-                workflowInstance.DefinitionId,
-                workflowInstance.TenantId,
-                VersionOptions.SpecificVersion(workflowInstance.Version),
-                cancellationToken);
-
-            if (workflowBlueprint == null)
-                throw new WorkflowException($"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
-
-            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
-        }
-
-        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
+        public virtual async Task<WorkflowInstance> RunWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             string? activityId = default,
@@ -204,7 +84,11 @@ namespace Elsa.Services
             {
                 case WorkflowStatus.Idle:
                     if (!await BeginWorkflow(workflowExecutionContext, activity, input, cancellationToken))
+                    {
+                        _logger.LogDebug("Workflow {WorkflowInstanceId} cannot begin from an idle state (perhaps it needs a specific input)", workflowInstance.Id);
                         return workflowInstance;
+                    }
+
                     break;
 
                 case WorkflowStatus.Running:
@@ -213,7 +97,11 @@ namespace Elsa.Services
 
                 case WorkflowStatus.Suspended:
                     if (!await ResumeWorkflowAsync(workflowExecutionContext, activity!, input, cancellationToken))
+                    {
+                        _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
                         return workflowInstance;
+                    }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -231,7 +119,10 @@ namespace Elsa.Services
             };
 
             if (statusEvent != null)
+            {
+                _logger.LogTrace("Publishing a status event of type {EventType} for workflow {WorkflowInstanceId}", statusEvent.GetType().Name, workflowInstance.Id);
                 await _mediator.Publish(statusEvent, cancellationToken);
+            }
 
             await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
             return workflowExecutionContext.WorkflowInstance;
@@ -240,7 +131,7 @@ namespace Elsa.Services
         private async Task<bool> BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, object? input, CancellationToken cancellationToken)
         {
             if (activity == null)
-                activity = workflowExecutionContext.WorkflowBlueprint.GetStartActivities().FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
+                activity = _startingActivitiesProvider.GetStartActivities(workflowExecutionContext.WorkflowBlueprint).FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
 
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, false, cancellationToken))
                 return false;
@@ -331,13 +222,13 @@ namespace Elsa.Services
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
 
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
-                
+
                 if (!burstStarted)
                 {
                     await _mediator.Publish(new WorkflowExecutionBurstStarting(workflowExecutionContext, activityExecutionContext), cancellationToken);
                     burstStarted = true;
                 }
-                
+
                 if (resuming)
                     await _mediator.Publish(new ActivityResuming(activityExecutionContext), cancellationToken);
 
@@ -348,9 +239,11 @@ namespace Elsa.Services
                     return;
 
                 await _mediator.Publish(new ActivityExecuted(resuming, activityExecutionContext), cancellationToken);
+                await _mediator.Publish(new ActivityExecutionResultExecuting(result, activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
                 workflowExecutionContext.CompletePass();
+                await _mediator.Publish(new ActivityExecutionResultExecuted(result, activityExecutionContext), cancellationToken);
                 await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
                 if (!workflowExecutionContext.HasScheduledActivities)

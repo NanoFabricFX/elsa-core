@@ -1,4 +1,5 @@
-﻿using Elsa.Client.Services;
+using Elsa.Client.Services;
+using Elsa.Client.Webhooks.Services;
 
 namespace Elsa.Client
 {
@@ -8,5 +9,6 @@ namespace Elsa.Client
         IWorkflowDefinitionsApi WorkflowDefinitions { get; }
         IWorkflowRegistryApi WorkflowRegistry { get; }
         IWorkflowInstancesApi WorkflowInstances { get; }
+        IWebhookDefinitionsApi WebhookDefinitions { get; }
     }
 }

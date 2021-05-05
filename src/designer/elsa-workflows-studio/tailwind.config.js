@@ -1,15 +1,25 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
+const colors = require('tailwindcss/colors')
+
+const dev = process.env.NODE_ENV === 'development';
 
 module.exports = {
-  theme: {
-    purge:{
-      enabled: true,
-      content: ['./src/**/*.tsx', './src/**/*.html'],
-      options: {
-        safelist: ['jtk-connector']
-      },
+  purge: {
+    enabled: !dev,
+    content: ['./src/**/*.tsx', './src/**/*.html'],
+    options: {
+      safelist: ['jtk-connector', 'rose', 'light-blue', /gray$/, /pink$/, /blue$/, /green$/, /red$/, /yellow$/]
     },
+  },
+  theme: {
     extend: {
+      colors: {
+        'light-blue': colors.lightBlue,
+        'cool-gray': colors.coolGray,
+        teal: colors.teal,
+        cyan: colors.cyan,
+        rose: colors.rose,
+      },
       fontFamily: {
         sans: ['Inter var', ...defaultTheme.fontFamily.sans],
       },
@@ -19,9 +29,8 @@ module.exports = {
     borderColor: ['responsive', 'hover', 'focus']
   },
   plugins: [
-    require('@tailwindcss/ui')({
-      layout: 'sidebar',
-    }),
-    require('@tailwindcss/forms')
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio'),
   ],
 };

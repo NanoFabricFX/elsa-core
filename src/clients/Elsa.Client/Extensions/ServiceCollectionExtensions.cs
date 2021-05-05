@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using Elsa.Client.Converters;
 using Elsa.Client.Options;
 using Elsa.Client.Services;
+using Elsa.Client.Webhooks.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -20,8 +21,6 @@ namespace Elsa.Client.Extensions
         {
             if (configure != null)
                 services.Configure(configure);
-            else
-                services.ConfigureOptions<ElsaClientOptions>();
 
             var refitSettings = CreateRefitSettings();
 
@@ -29,7 +28,8 @@ namespace Elsa.Client.Extensions
                 .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowRegistryApi>(refitSettings, httpClientFactory)
-                .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory);
+                .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWebhookDefinitionsApi>(refitSettings, httpClientFactory);
 
             return services
                 .AddTransient<IElsaClient, ElsaClient>();

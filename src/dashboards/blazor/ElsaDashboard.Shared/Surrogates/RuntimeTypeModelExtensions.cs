@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Elsa.Client.Models;
+using Elsa.Client.Webhooks.Models;
 using ProtoBuf.Meta;
 
 namespace ElsaDashboard.Shared.Surrogates
@@ -16,11 +17,12 @@ namespace ElsaDashboard.Shared.Surrogates
             [typeof(VersionOptions)] = typeof(VersionOptionsSurrogate),
             [typeof(WorkflowInstance)] = typeof(WorkflowInstanceSurrogate),
             [typeof(WorkflowDefinition)] = typeof(WorkflowDefinitionSurrogate),
-            [typeof(WorkflowBlueprint)] = typeof(WorkflowBlueprintSurrogate)
+            [typeof(WorkflowBlueprint)] = typeof(WorkflowBlueprintSurrogate),
+            [typeof(WebhookDefinition)] = typeof(WebhookDefinitionSurrogate),
         };
 
         /// <summary>
-        /// Register all NodaTime surrogate types with the protobuf runtime model.
+        /// Register all surrogate types with the protobuf runtime model.
         /// </summary>
         public static RuntimeTypeModel AddElsaGrpcSurrogates(this RuntimeTypeModel runtimeTypeModel)
         {

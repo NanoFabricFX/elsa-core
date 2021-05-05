@@ -6,18 +6,21 @@ using System.Runtime.CompilerServices;
 using Elsa.Services;
 using Elsa.Services.Models;
 
+// ReSharper disable ExplicitCallerInfoArgument
 namespace Elsa.Builders
 {
     public class ActivityBuilder : IActivityBuilder
     {
         public ActivityBuilder(
             Type activityType,
+            string activityTypeName,
             ICompositeActivityBuilder workflowBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders,
             int lineNumber,
             string? sourceFile)
         {
             ActivityType = activityType;
+            ActivityTypeName = activityTypeName;
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
             LineNumber = lineNumber;
@@ -29,6 +32,7 @@ namespace Elsa.Builders
         }
 
         public Type ActivityType { get; protected set; } = default!;
+        public string ActivityTypeName { get; protected set; } = default!;
         public ICompositeActivityBuilder WorkflowBuilder { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string? Name { get; set; }
@@ -44,25 +48,27 @@ namespace Elsa.Builders
         public string? Source => SourceFile != null && LineNumber != default ? $"{Path.GetFileName(SourceFile)}:{LineNumber}" : default;
 
         public IActivityBuilder Add<T>(
+            string activityTypeName, 
             Action<ISetupActivity<T>>? setup = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
+            WorkflowBuilder.Add(activityTypeName, setup, null, lineNumber, sourceFile);
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 
         public virtual IActivityBuilder Then<T>(
+            string activityTypeName,
             Action<ISetupActivity<T>>? setup = null,
             Action<IActivityBuilder>? branch = null,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            When(OutcomeNames.Done).Then(setup, branch, lineNumber, sourceFile);
+            When(OutcomeNames.Done).Then(activityTypeName, setup, branch, lineNumber, sourceFile);
 
-        public virtual IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public virtual IActivityBuilder Then<T>(string activityTypeName, Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            When(OutcomeNames.Done).Then<T>(branch, lineNumber, sourceFile);
+            When(OutcomeNames.Done).Then<T>(activityTypeName, branch, lineNumber, sourceFile);
 
         public virtual IActivityBuilder Then(IActivityBuilder targetActivity)
         {
@@ -70,7 +76,7 @@ namespace Elsa.Builders
             return this;
         }
 
-        public virtual IConnectionBuilder Then(string activityName) =>
+        public virtual IConnectionBuilder ThenNamed(string activityName) =>
             WorkflowBuilder.Connect(
                 () => this,
                 () => WorkflowBuilder.Activities.First(x => x.Name == activityName));

@@ -5,33 +5,39 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Storage.Net.Blobs;
 
 namespace Elsa.Builders
 {
     public class WorkflowBuilder : CompositeActivityBuilder, IWorkflowBuilder
     {
-        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider) : base(serviceProvider)
+        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider) : base(serviceProvider, startingActivitiesProvider)
         {
             Version = 1;
-            IsEnabled = true;
+            IsLatest = true;
+            IsPublished = true;
             Variables = new Variables();
             CustomAttributes = new Variables();
             ActivityId = idGenerator.Generate();
             ActivityType = typeof(Workflow);
+            ActivityTypeName = nameof(Workflow);
             WorkflowBuilder = this;
             PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();
+            PersistenceBehavior = WorkflowPersistenceBehavior.WorkflowBurst;
         }
         
         public int Version { get; private set; }
+        public bool IsLatest { get; private set; }
+        public bool IsPublished { get; private set; }
         public string? TenantId { get; private set; }
         public bool IsSingleton { get; private set; }
+        public string? Tag { get; private set; }
 
         public Variables Variables { get; }
         public Variables CustomAttributes { get; }
         public WorkflowContextOptions? ContextOptions { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
-        public bool IsEnabled { get; private set; }
 
         public IWorkflowBuilder WithWorkflowDefinitionId(string? value)
         {
@@ -73,9 +79,17 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder WithVersion(int value)
+        public IWorkflowBuilder WithVersion(int value, bool isLatest = true, bool isPublished = true)
         {
             Version = value;
+            IsLatest = isLatest;
+            isPublished = isPublished;
+            return this;
+        }
+        
+        public IWorkflowBuilder WithTag(string value)
+        {
+            Tag = value;
             return this;
         }
 
@@ -94,12 +108,6 @@ namespace Elsa.Builders
         public IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value)
         {
             PersistenceBehavior = value;
-            return this;
-        }
-
-        public IWorkflowBuilder Enable(bool value)
-        {
-            IsEnabled = value;
             return this;
         }
 
@@ -156,12 +164,12 @@ namespace Elsa.Builders
                 Version,
                 TenantId,
                 IsSingleton,
-                IsEnabled,
                 Name,
                 DisplayName,
                 Description,
-                true,
-                true,
+                IsLatest,
+                IsPublished,
+                Tag,
                 Variables,
                 CustomAttributes,
                 ContextOptions,

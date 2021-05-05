@@ -1,7 +1,8 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Primitives;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Elsa.Services.Models;
 using NodaTime;
@@ -19,14 +20,15 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
         public DemoWorkflow(IClock clock)
         {
             _clock = clock;
-            _timeOut = Duration.FromSeconds(10);
+            _timeOut = Duration.FromSeconds(20);
         }
 
         public void Build(IWorkflowBuilder builder)
         {
             builder
+                .SetVariable("SignalUrl", context => context.GenerateSignalUrl("hurry"))
                 .WriteLine(context =>
-                    $"The demo completes in {_timeOut.ToString()} ({_clock.GetCurrentInstant().Plus(_timeOut)}). Can't wait that long? Send me the secret \"hurry\" signal! (http://localhost:7304/signal/hurry/trigger?correlationId={GetCorrelationId(context)})")
+                    $"The demo completes in {_timeOut.ToString()} ({_clock.GetCurrentInstant().Plus(_timeOut)}). Can't wait that long? Send me the secret \"hurry\" signal! ({context.GetVariable<string>("SignalUrl")})")
                 .Then<Fork>(
                     fork => fork.WithBranches("Timer", "Signal"),
                     fork =>
@@ -35,13 +37,13 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
                             .When("Timer")
                             .Timer(_timeOut)
                             .SetVariable("CompletedVia", "Timer")
-                            .Then("Join");
+                            .ThenNamed("Join");
 
                         fork
                             .When("Signal")
                             .SignalReceived("hurry")
                             .SetVariable("CompletedVia", "Signal")
-                            .Then("Join");
+                            .ThenNamed("Join");
                     })
                 .Add<Join>(x => x.WithMode(Join.JoinMode.WaitAny)).WithName("Join")
                 .WriteLine(context => $"Demo {GetCorrelationId(context)} completed successfully via {context.GetVariable<string>("CompletedVia")}!");

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -12,29 +14,35 @@ namespace Elsa.Activities.ControlFlow
 {
     [Activity(
         Category = "Workflows",
-        Description = "Removes any blocking activities from the current container (workflow or composite activity)."
+        Description = "Removes any blocking activities from the current container (workflow or composite activity).",
+        Outcomes = new string[0]
     )]
     public class Finish : Activity
     {
-        [ActivityProperty(Hint = "The value to set as the workflow's output")]
+        [ActivityProperty(Hint = "The value to set as the workflow's output", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? OutputValue { get; set; }
 
-        [ActivityProperty(Hint = "The outcomes to set on the container activity")]
+        [ActivityProperty(
+            Hint = "The outcomes to set on the container activity", 
+            UIHint = ActivityPropertyUIHints.MultiText, 
+            DefaultValue = Elsa.OutcomeNames.Done, 
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public IEnumerable<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var parentBlueprint = context.ActivityBlueprint.Parent;
-            
+
             // Remove any blocking activities within the scope of the composite activity.
             var blockingActivities = context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities;
             var blockingActivityIds = blockingActivities.Select(x => x.ActivityId).ToList();
             var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
             var containedBlockingActivities = blockingActivities.Where(x => containedBlockingActivityIds.Contains(x.ActivityId));
-            
-            foreach (var blockingActivity in containedBlockingActivities) 
+
+            foreach (var blockingActivity in containedBlockingActivities)
                 await context.WorkflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
-            
+
             // Evict & remove any scope activities within the scope of the composite activity.
             var scopes = context.WorkflowInstance.Scopes.Select(x => x).Reverse().ToList();
             var scopeIds = scopes.Select(x => x.ActivityId).ToList();
@@ -46,10 +54,10 @@ namespace Elsa.Activities.ControlFlow
                 await context.WorkflowExecutionContext.EvictScopeAsync(scopeActivity);
                 scopes.RemoveAll(x => x.ActivityId == scopeId);
             }
-            
+
             context.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
-            
-            // Return output
+
+            // Return output.
             var output = new FinishOutput(OutputValue, OutcomeNames);
 
             return Output(output);

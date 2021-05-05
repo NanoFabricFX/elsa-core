@@ -12,10 +12,12 @@ namespace Elsa.Handlers
     public class PersistWorkflow :
         INotificationHandler<WorkflowExecuted>,
         INotificationHandler<WorkflowSuspended>,
+        INotificationHandler<WorkflowFaulted>,
         INotificationHandler<WorkflowExecutionPassCompleted>,
         INotificationHandler<WorkflowExecutionBurstStarting>,
         INotificationHandler<WorkflowExecutionBurstCompleted>,
-        INotificationHandler<WorkflowExecutionFinished>
+        INotificationHandler<WorkflowExecutionFinished>,
+        INotificationHandler<ActivityExecuted>
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ILogger _logger;
@@ -28,7 +30,9 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
+            
+            if (behavior == WorkflowPersistenceBehavior.Suspended)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
@@ -75,18 +79,35 @@ namespace Elsa.Handlers
             }
             else
             {
-                var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
-
-                if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || behavior == WorkflowPersistenceBehavior.WorkflowBurst)
-                    await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
             }
+        }
+        
+        public async Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)
+        {
+            await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+        }
+
+        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        {
+            var workflowPersistenceBehavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
+            var activityPersistenceBehavior = notification.Activity.PersistWorkflow;
+
+            if (workflowPersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted || activityPersistenceBehavior)
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
         private async ValueTask SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            workflowExecutionContext.PruneActivityData();
+            _logger.LogTrace("Persisting workflow instance {instanceId}", workflowExecutionContext.WorkflowInstance.Id);
+
+            // Can't prune data - we need to figure out a better way to remove activity output data.
+            // Doing it right now causes issues when transferring output data from composite activities.
+            //workflowExecutionContext.PruneActivityData();
+            
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+
             _logger.LogDebug("Committed workflow {WorkflowInstanceId} to storage", workflowInstance.Id);
         }
     }

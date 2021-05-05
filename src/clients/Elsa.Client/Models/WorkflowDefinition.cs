@@ -25,9 +25,15 @@ namespace Elsa.Client.Models
         [DataMember(Order = 10)] public bool IsSingleton { get; set; }
         [DataMember(Order = 11)] public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         [DataMember(Order = 12)] public bool DeleteCompletedInstances { get; set; }
-        [DataMember(Order = 13)] public bool IsEnabled { get; set; }
-        [DataMember(Order = 14)] public bool IsPublished { get; set; }
-        [DataMember(Order = 15)] public bool IsLatest { get; set; }
+        [DataMember(Order = 13)] public bool IsPublished { get; set; }
+        [DataMember(Order = 14)] public bool IsLatest { get; set; }
+
+        /// <summary>
+        /// Allows for applications to store an application-specific, queryable value to associate with the workflow.
+        /// </summary>
+        [DataMember(Order = 15)]
+        public string? Tag { get; set; }
+
         [DataMember(Order = 16)] public ICollection<ActivityDefinition> Activities { get; set; }
         [DataMember(Order = 17)] public ICollection<ConnectionDefinition> Connections { get; set; }
     }

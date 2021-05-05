@@ -1,14 +1,12 @@
 ﻿using System;
 using Elsa;
 using Elsa.Models;
-using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -17,9 +15,10 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<JsonSerializerSettings>? configureOptions = default)
+        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<MvcNewtonsoftJsonOptions>? setupNewtonsoftJson = default)
         {
-            services.AddControllers().AddJsonSerialization(configureOptions);
+            setupNewtonsoftJson ??= _ => { }; 
+            services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
             services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddVersionedApiExplorer(o =>
@@ -39,6 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ConnectionConverter>();
             services.AddSingleton<ActivityBlueprintConverter>();
             services.AddSingleton<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
+            services.AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>();
             services.AddAutoMapperProfile<AutoMapperProfile>();
             return services;
         }

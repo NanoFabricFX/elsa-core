@@ -2,10 +2,9 @@ using System;
 using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
-using Elsa.Activities.Http.Handlers;
+using Elsa.Activities.Http.JavaScript;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
-using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -16,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddHttpActivities(this ElsaOptions options, Action<HttpActivityOptions>? configureOptions = null)
+        public static ElsaOptionsBuilder AddHttpActivities(this ElsaOptionsBuilder options, Action<HttpActivityOptions>? configureOptions = null)
         {
             options.Services.AddHttpServices(configureOptions);
             options.AddHttpActivitiesInternal();
@@ -42,22 +41,19 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-                .AddBookmarkProvider<HttpRequestReceivedTriggerProvider>()
+                .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
-                .AddNotificationHandlers(typeof(HttpJavaScriptHandler))
+                .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddDataProtection();
-            
-            return services
-                .AddRequestHandler<SignalRequestHandler>();
+
+            return services;
         }
 
-        private static ElsaOptions AddHttpActivitiesInternal(this ElsaOptions options) =>
+        private static ElsaOptionsBuilder AddHttpActivitiesInternal(this ElsaOptionsBuilder options) =>
             options
-                .AddActivity<HttpRequestReceived>()
+                .AddActivity<HttpEndpoint>()
                 .AddActivity<WriteHttpResponse>()
                 .AddActivity<SendHttpRequest>()
                 .AddActivity<Redirect>();
-
-        public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services) where THandler : class, IRequestHandler => services.AddScoped<THandler>();
     }
 }

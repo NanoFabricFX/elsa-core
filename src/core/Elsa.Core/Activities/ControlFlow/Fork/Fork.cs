@@ -1,20 +1,25 @@
 ﻿using System.Collections.Generic;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [Activity(
-        Category = "Control Flow",
-        Description = "Fork workflow execution into multiple branches.",
-        Outcomes = new[] { "x => x.state.branches" })]
+    [Activity(Category = "Control Flow", Description = "Fork workflow execution into multiple branches.")]
     public class Fork : Activity
     {
-        [ActivityProperty(Hint = "Enter one or more names representing branches, separated with a comma. Example: Branch 1, Branch 2")]
-        public HashSet<string> Branches { get; set; } = new();
+        [ActivityProperty(
+            Hint = "Enter one or more branch names.",
+            UIHint = ActivityPropertyUIHints.MultiText,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json }
+        )]
+        public ISet<string> Branches { get; set; } = new HashSet<string>();
 
-        protected override IActivityExecutionResult OnExecute() => Combine(Done(), Outcomes(Branches));
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Outcomes(Branches);
     }
 }

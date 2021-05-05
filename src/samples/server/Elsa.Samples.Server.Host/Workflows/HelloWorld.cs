@@ -10,9 +10,9 @@ namespace Elsa.Samples.Server.Host.Workflows
         {
             builder
                 .WithWorkflowDefinitionId("HelloWorld")
-                .WithVersion(1)
+                .WithVersion(1, false, false)
                 .WithDisplayName("Hello World!")
-                .HttpRequestReceived("/hello-world")
+                .HttpEndpoint("/hello-world")
                 .WriteHttpResponse(HttpStatusCode.OK, "Hello World!", "text/plain");
         }
     }

@@ -8,12 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Hangfire.SqlServer" Version="1.7.19" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.7.20" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Builders;
@@ -8,11 +9,12 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services
 {
+    [Browsable(false)]
     public class CompositeActivity : Activity
     {
         internal const string Enter = "Enter";
         
-        public virtual void Build(ICompositeActivityBuilder activity)
+        public virtual void Build(ICompositeActivityBuilder builder)
         {
         }
 
@@ -56,7 +58,6 @@ namespace Elsa.Services
             }
 
             IsScheduled = false;
-            await OnExitAsync(context);
 
             var finishOutput = context.Input as FinishOutput;
             var outcomes = new List<string> { OutcomeNames.Done };
@@ -68,7 +69,9 @@ namespace Elsa.Services
                 output = finishOutput.Output;
             }
             
-            return Combine(Outcomes(outcomes), Output(output));
+            await OnExitAsync(context, output);
+            
+            return Combine(Output(output), Outcomes(outcomes));
         }
 
         protected virtual ValueTask OnEnterAsync(ActivityExecutionContext context)
@@ -77,9 +80,9 @@ namespace Elsa.Services
             return new();
         }
 
-        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context)
+        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
-            OnExit(context);
+            OnExit(context, output);
             return new();
         }
 
@@ -87,7 +90,7 @@ namespace Elsa.Services
         {
         }
         
-        protected virtual void OnExit(ActivityExecutionContext context)
+        protected virtual void OnExit(ActivityExecutionContext context, object? output)
         {
         }
     }

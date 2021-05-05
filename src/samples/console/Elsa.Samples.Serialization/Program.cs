@@ -38,7 +38,6 @@ namespace Elsa.Samples.Serialization
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
-                IsEnabled = true,
                 PersistenceBehavior = WorkflowPersistenceBehavior.Suspended,
                 Activities = new[]
                 {
@@ -68,8 +67,8 @@ namespace Elsa.Samples.Serialization
             var workflowBlueprint = await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
 
             // Execute workflow.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
-            await workflowRunner.RunWorkflowAsync(workflowBlueprint);
+            var workflowRunner = services.GetRequiredService<IStartsWorkflow>();
+            await workflowRunner.StartWorkflowAsync(workflowBlueprint);
         }
     }
 }

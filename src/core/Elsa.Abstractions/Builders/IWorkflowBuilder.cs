@@ -12,16 +12,14 @@ namespace Elsa.Builders
         int Version { get; }
         WorkflowPersistenceBehavior PersistenceBehavior { get; }
         bool DeleteCompletedInstances { get; }
-        bool IsEnabled { get; }
         IWorkflowBuilder WithWorkflowDefinitionId(string value);
-        IWorkflowBuilder WithVersion(int value);
+        IWorkflowBuilder WithVersion(int value, bool isLatest = true, bool isPublished = true);
         IWorkflowBuilder AsSingleton();
         IWorkflowBuilder AsTransient();
         IWorkflowBuilder WithContextType<T>(WorkflowContextFidelity fidelity = WorkflowContextFidelity.Burst);
         IWorkflowBuilder WithContextType(Type value, WorkflowContextFidelity fidelity = WorkflowContextFidelity.Burst);
         IWorkflowBuilder WithDeleteCompletedInstances(bool value);
         IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value);
-        IWorkflowBuilder Enable(bool value);
         IWorkflowBuilder WithVariable(string name, object value);
         IWorkflowBuilder WithCustomAttribute(string name, object value);
         IWorkflowBuilder WithTenantId(string value);

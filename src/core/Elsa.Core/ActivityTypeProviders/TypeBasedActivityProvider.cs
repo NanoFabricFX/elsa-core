@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -12,26 +11,29 @@ namespace Elsa.ActivityTypeProviders
 {
     public class TypeBasedActivityProvider : IActivityTypeProvider
     {
-        private readonly IActivityDescriber _activityDescriber;
+        private readonly IDescribesActivityType _describesActivityType;
         private readonly IActivityActivator _activityActivator;
         private readonly ElsaOptions _elsaOptions;
 
         public TypeBasedActivityProvider(ElsaOptions options,
-            IActivityDescriber activityDescriber, 
+            IDescribesActivityType describesActivityType, 
             IActivityActivator activityActivator)
         {
-            _activityDescriber = activityDescriber;
+            _describesActivityType = describesActivityType;
             _activityActivator = activityActivator;
             _elsaOptions = options;
         }
         
         public ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => new(GetActivityTypesInternal());
        
-        private IEnumerable<ActivityType> GetActivityTypesInternal() => GetActivityTypes().Select(CreateActivityType);
+        private IEnumerable<ActivityType> GetActivityTypesInternal() => GetActivityTypes().Select(CreateActivityType).Where(x => x != null).Select(x => x!);
        
-        private ActivityType CreateActivityType(Type activityType)
+        private ActivityType? CreateActivityType(Type activityType)
         {
-            var info = _activityDescriber.Describe(activityType)!;
+            var info = _describesActivityType.Describe(activityType);
+
+            if (info == null)
+                return default;
 
             return new ActivityType
             {

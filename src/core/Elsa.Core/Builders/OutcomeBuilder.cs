@@ -21,25 +21,26 @@ namespace Elsa.Builders
         public string Outcome { get; }
 
         public IActivityBuilder Then<T>(
+            string activityTypeName,
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add(activityTypeName, setup, null, lineNumber, sourceFile);
             Then(activityBuilder, branch);
             return activityBuilder;
         }
 
-        public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder Then<T>(string activityTypeName, Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add<T>(branch, null, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add<T>(activityTypeName, branch, null, lineNumber, sourceFile);
             Then(activityBuilder);
             return activityBuilder;
         }
 
-        public IConnectionBuilder Then(string activityName)
+        public IConnectionBuilder ThenNamed(string activityName)
         {
             return WorkflowBuilder.Connect(
                 () => Source,

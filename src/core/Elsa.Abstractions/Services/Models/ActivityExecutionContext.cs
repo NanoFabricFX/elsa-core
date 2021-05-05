@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
@@ -113,9 +112,19 @@ namespace Elsa.Services.Models
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
+        
+        public T? SetVariable<T>(string name, Func<T?, T?> updater)
+        {
+            var value = GetVariable<T>(name);
+            value = updater(value);
+            SetVariable(name, value);
+            return value;
+        }
+
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T? GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public bool HasVariable(string name) => WorkflowExecutionContext.HasVariable(name);
 
         /// <summary>
         /// Clears all of the variables associated with the current <see cref="Elsa.Models.WorkflowInstance"/>.
@@ -147,6 +156,23 @@ namespace Elsa.Services.Models
         public T? GetOutputFrom<T>(string activityName, Func<T?> defaultValue) => (T?) GetOutputFrom(activityName, defaultValue())!;
         public T? GetOutputFrom<T>(string activityName, T? defaultValue) => (T?) GetOutputFrom(activityName, () => defaultValue)!;
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
+        public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
+
+        public JObject GetActivityData() => GetActivityData(ActivityId);
+        
+        public JObject GetActivityData(string activityId)
+        {
+            var activityData = WorkflowInstance.ActivityData;
+            var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
+
+            if (state != null) 
+                return state;
+            
+            state = new JObject();
+            activityData[activityId] = state;
+
+            return state;
+        }
     }
 }

@@ -6,6 +6,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Events;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -36,8 +37,12 @@ namespace Elsa.Activities.ControlFlow
             WaitAny
         }
 
-        [ActivityProperty(Type = ActivityPropertyTypes.Select, Hint = "Either 'WaitAll' or 'WaitAny'")]
-        [SelectOptions("WaitAll", "WaitAny")]
+        [ActivityProperty(
+            UIHint = ActivityPropertyUIHints.Dropdown,
+            Hint = "WaitAll: wait for all incoming activities to have executed. WaitAny: continue execution as soon as any of the incoming activity has executed.",
+            Options = new[] { "WaitAll", "WaitAny" },
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
         public JoinMode Mode { get; set; }
 
         public IReadOnlyCollection<string> InboundTransitions
@@ -52,7 +57,7 @@ namespace Elsa.Activities.ControlFlow
 
             if (!IsDone(workflowExecutionContext))
                 return Noop();
-            
+
             var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
             var activities = workflowExecutionContext.WorkflowBlueprint.Activities.ToDictionary(x => x.Id);
             var ancestors = ancestorActivityIds.Select(x => activities[x]).ToList();
@@ -96,7 +101,7 @@ namespace Elsa.Activities.ControlFlow
                     blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
                 }
 
-                if (fork == null || blockingActivityAncestors.Contains(fork.Id)) 
+                if (fork == null || blockingActivityAncestors.Contains(fork.Id))
                     await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
             }
         }
@@ -126,7 +131,7 @@ namespace Elsa.Activities.ControlFlow
 
                 var evictedScopes = scopes.Skip(i).ToList();
                 scopes = scopes.Take(i).ToList();
-                
+
                 foreach (var evictedScope in evictedScopes)
                 {
                     var activity = workflowExecutionContext.WorkflowBlueprint.GetActivity(evictedScope.ActivityId)!;
