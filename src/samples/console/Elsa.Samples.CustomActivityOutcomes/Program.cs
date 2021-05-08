@@ -1,10 +1,11 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Elsa.Samples.CustomActivityOutcomes.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.HelloWorldConsole
+namespace Elsa.Samples.CustomActivityOutcomes
 {
-    class Program
+    internal class Program
     {
         private static async Task Main()
         {
@@ -12,14 +13,15 @@ namespace Elsa.Samples.HelloWorldConsole
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     .AddConsoleActivities()
-                    .AddWorkflow<HelloWorld>())
+                    .AddActivitiesFrom<Program>()
+                    .AddWorkflowsFrom<Program>())
                 .BuildServiceProvider();
-            
+
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Run the workflow.
-            await workflowRunner.BuildAndStartWorkflowAsync<HelloWorld>();
+            await workflowRunner.BuildAndStartWorkflowAsync<SampleWorkflow>();
         }
     }
 }

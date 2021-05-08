@@ -6,8 +6,15 @@ services:
         image: mongo
         ports:
             - "27017:27017"
-        volumes:
-            - /var/lib/mongodb:/var/lib/mongodb
+              
+    postgres:
+        image: postgres:11
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=Password12!
+            - POSTGRES_DB=yessql
+        ports:
+            - "5432:5432"
             
     azureblobstorage:
         image: mcr.microsoft.com/azure-blob-storage

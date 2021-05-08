@@ -38,7 +38,7 @@ export class ElsaStudioRoot {
                     </stencil-route-link>
                     <stencil-route-link url="/workflow-registry" anchorClass="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClass="text-white bg-gray-900">Workflow Registry
                     </stencil-route-link>
-                    <stencil-route-link url="/custom-activities" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Custom Activities</stencil-route-link>
+                    {/*<stencil-route-link url="/custom-activities" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Custom Activities</stencil-route-link>*/}
                   </div>
                 </div>
               </div>
@@ -50,7 +50,7 @@ export class ElsaStudioRoot {
           {/*<Tunnel.Provider state={tunnelState}>*/}
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
-              <stencil-route url="/" routeRender={props => <stencil-route-redirect url="/workflow-registry"/>} exact={true}/>
+              <stencil-route url="/" component="elsa-studio-home" exact={true}/>
               <stencil-route url="/workflow-registry" component="elsa-studio-workflow-registry" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-registry/:id" component="elsa-studio-workflow-blueprint-view" componentProps={{'serverUrl': serverUrl}} />
               <stencil-route url="/workflow-definitions" component="elsa-studio-workflow-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
