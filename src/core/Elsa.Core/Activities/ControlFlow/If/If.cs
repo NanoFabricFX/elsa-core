@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
@@ -24,7 +25,7 @@ namespace Elsa.Activities.ControlFlow
         public const string True = "True";
         public const string False = "False";
 
-        [ActivityProperty(Hint = "The condition to evaluate.", UIHint = ActivityPropertyUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The condition to evaluate.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool Condition { get; set; }
 
         public bool EnteredScope
@@ -58,7 +59,7 @@ namespace Elsa.Activities.ControlFlow
             if (notification.EvictedScope.Type != nameof(If))
                 return Task.CompletedTask;
 
-            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());
+            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new Dictionary<string, object>());
             data.SetState(nameof(EnteredScope), false);
 
             return Task.CompletedTask;

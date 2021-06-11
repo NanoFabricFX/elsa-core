@@ -14,11 +14,11 @@ namespace Elsa.Builders
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
         private readonly Func<ICompositeActivityBuilder> _compositeActivityBuilderFactory;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        private readonly IGetsStartActivities _startingActivitiesProvider;
 
         internal CompositeActivityBuilder(
             IServiceProvider serviceProvider,
-            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider,
+            IGetsStartActivities startingActivitiesProvider,
             Type activityType,
             string activityTypeName) : this(serviceProvider, startingActivitiesProvider)
         {
@@ -27,7 +27,7 @@ namespace Elsa.Builders
             WorkflowBuilder = this;
         }
 
-        public CompositeActivityBuilder(IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+        public CompositeActivityBuilder(IServiceProvider serviceProvider, IGetsStartActivities startingActivitiesProvider)
         {
             _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
             ServiceProvider = serviceProvider;
@@ -160,12 +160,20 @@ namespace Elsa.Builders
             return connectionBuilder;
         }
 
+        public override IActivityBuilder ThenNamed(string activityName)
+        {
+            var compositeName = GetCompositeName(activityName)!;
+            return base.ThenNamed(compositeName);
+        }
+
         public ICompositeActivityBlueprint Build(string activityIdPrefix = "activity")
         {
             var compositeActivityBlueprint = new CompositeActivityBlueprint
             {
                 Id = ActivityId,
                 Name = Name,
+                DisplayName = DisplayName,
+                Description = Description,
                 Type = ActivityTypeName,
                 PersistOutput = PersistOutputEnabled,
                 PersistWorkflow = PersistWorkflowEnabled,
@@ -238,14 +246,16 @@ namespace Elsa.Builders
             }
         }
 
-        private static IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
+        private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
         {
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
-                ? new CompositeActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
+                ? new CompositeActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
                     builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source)
-                : new ActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
+                : new ActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
                     builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source);
         }
+
+        private string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";
     }
 }

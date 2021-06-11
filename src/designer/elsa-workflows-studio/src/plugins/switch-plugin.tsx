@@ -19,8 +19,8 @@ export class SwitchPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const syntax = 'Switch';
     const casesProp = props.find(x => x.name == 'Cases') || { expressions: {'Switch': ''}, syntax: syntax };
-    const expression = casesProp.expressions[syntax];
-    const cases: Array<SwitchCase> = parseJson(expression) || [];
+    const expression = casesProp.expressions[syntax] || '[]';
+    const cases: Array<SwitchCase> = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
     context.outcomes = [...cases.map(x => x.name), 'Default'];
   }
 }

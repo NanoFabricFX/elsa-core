@@ -7,6 +7,7 @@ using Elsa.Builders;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Services.Models;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
@@ -37,11 +38,11 @@ namespace Elsa.Services
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
-            await ResumeWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
+            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, correlationId, tenantId, cancellationToken).ToList();
+            await ResumeWorkflowsAsync(results, input, cancellationToken);
         }
 
-        public async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+        public async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, CancellationToken cancellationToken = default)
         {
             foreach (var result in results)
             {
@@ -52,19 +53,19 @@ namespace Elsa.Services
             }
         }
 
-        public async Task<WorkflowInstance> BuildAndResumeWorkflowAsync<T>(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
+        public async Task<RunWorkflowResult> BuildAndResumeWorkflowAsync<T>(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default) where T : IWorkflow
         {
             var workflowBlueprint = _workflowBuilderFactory().Build<T>();
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<WorkflowInstance> BuildAndResumeWorkflowAsync(IWorkflow workflow, WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<RunWorkflowResult> BuildAndResumeWorkflowAsync(IWorkflow workflow, WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = _workflowBuilderFactory().Build(workflow);
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<WorkflowInstance> ResumeWorkflowAsync(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<RunWorkflowResult> ResumeWorkflowAsync(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(
                 workflowInstance.DefinitionId,

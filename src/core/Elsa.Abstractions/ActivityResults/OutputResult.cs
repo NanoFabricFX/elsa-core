@@ -1,4 +1,5 @@
-﻿using Elsa.Services.Models;
+﻿using System;
+using Elsa.Services.Models;
 
 namespace Elsa.ActivityResults
 {

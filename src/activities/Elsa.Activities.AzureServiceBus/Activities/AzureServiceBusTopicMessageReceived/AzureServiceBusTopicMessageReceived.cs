@@ -22,14 +22,17 @@ namespace Elsa.Activities.AzureServiceBus
             _serializer = serializer;
         }
 
-        [ActivityProperty(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string TopicName { get; set; } = default!;
 
-        [ActivityProperty(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string SubscriptionName { get; set; } = default!;
 
-        [ActivityProperty]
+        [ActivityInput]
         public Type MessageType { get; set; } = default!;
+        
+        [ActivityOutput]
+        public object? ReceivedMessage { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
@@ -39,6 +42,7 @@ namespace Elsa.Activities.AzureServiceBus
             var message = (MessageModel) context.Input!;
             var model = message.ReadBody(MessageType, _serializer);
 
+            ReceivedMessage = model;
             return Done(model);
         }
     }

@@ -20,7 +20,7 @@ namespace Elsa.Services
         public virtual bool PersistWorkflow { get; set; }
         public virtual bool LoadWorkflowContext { get; set; }
         public virtual bool SaveWorkflowContext { get; set; }
-        public virtual JObject Data { get; set; } = new();
+        public virtual IDictionary<string, object> Data { get; set; } = new Dictionary<string, object>();
         public virtual ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context) => OnCanExecuteAsync(context);
         public virtual ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context) => OnExecuteAsync(context);
         public virtual ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context) => OnResumeAsync(context);
@@ -35,11 +35,13 @@ namespace Elsa.Services
         protected virtual NoopResult Noop() => new();
         protected virtual OutcomeResult Done() => Outcome(OutcomeNames.Done);
         protected virtual CombinedResult Done(object? output) => Combine(Output(output), Done());
+
         protected virtual OutcomeResult Outcomes(IEnumerable<string> outcomes) => new(outcomes);
-        protected virtual OutcomeResult Outcomes(params string[] outcomes) => Outcomes((IEnumerable<string>)outcomes);
+        protected virtual OutcomeResult Outcomes(params string[] outcomes) => Outcomes((IEnumerable<string>) outcomes);
         protected virtual OutcomeResult Outcome(string outcome) => Outcomes(outcome);
         protected virtual CombinedResult Outcome(string outcome, object? output) => Combine(Output(output), Outcome(outcome));
         protected virtual OutputResult Output(object? output) => new(output);
+        
         protected virtual SuspendResult Suspend() => new();
         protected virtual ScheduleActivitiesResult Schedule(params string[] activityIds) => new(activityIds);
         protected virtual ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds, object? input) => new(activityIds, input);
@@ -50,10 +52,9 @@ namespace Elsa.Services
         protected virtual FaultResult Fault(Exception exception) => new(exception);
         protected virtual FaultResult Fault(string message) => new(message);
         protected virtual RegisterTaskResult RegisterTask(Func<WorkflowExecutionContext, CancellationToken, ValueTask> task) => new(task);
-        
+
         protected virtual T? GetState<T>([CallerMemberName] string name = null!) => Data.GetState<T>(name);
         protected virtual T GetState<T>(Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
-        protected virtual T GetState<T>(Type type, Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(type, name, defaultValue);
         protected virtual void SetState(object? value, [CallerMemberName] string name = null!) => Data.SetState(name, value);
     }
 }

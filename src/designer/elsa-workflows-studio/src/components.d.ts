@@ -36,8 +36,9 @@ export namespace Components {
         "menuItems": Array<MenuItem>;
     }
     interface ElsaDesignerTree {
+        "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: string;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
@@ -126,6 +127,11 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
         "showLabel": boolean;
         "singleLineMode": boolean;
+    }
+    interface ElsaRadioListProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
     }
     interface ElsaScriptProperty {
         "context"?: string;
@@ -346,6 +352,12 @@ declare global {
         prototype: HTMLElsaPropertyEditorElement;
         new (): HTMLElsaPropertyEditorElement;
     };
+    interface HTMLElsaRadioListPropertyElement extends Components.ElsaRadioListProperty, HTMLStencilElement {
+    }
+    var HTMLElsaRadioListPropertyElement: {
+        prototype: HTMLElsaRadioListPropertyElement;
+        new (): HTMLElsaRadioListPropertyElement;
+    };
     interface HTMLElsaScriptPropertyElement extends Components.ElsaScriptProperty, HTMLStencilElement {
     }
     var HTMLElsaScriptPropertyElement: {
@@ -498,6 +510,7 @@ declare global {
         "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-property-editor": HTMLElsaPropertyEditorElement;
+        "elsa-radio-list-property": HTMLElsaRadioListPropertyElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
         "elsa-studio-home": HTMLElsaStudioHomeElement;
@@ -543,8 +556,9 @@ declare namespace LocalJSX {
         "menuItems"?: Array<MenuItem>;
     }
     interface ElsaDesignerTree {
+        "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: string;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
         "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
@@ -638,6 +652,11 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
         "showLabel"?: boolean;
         "singleLineMode"?: boolean;
+    }
+    interface ElsaRadioListProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
     }
     interface ElsaScriptProperty {
         "context"?: string;
@@ -757,6 +776,7 @@ declare namespace LocalJSX {
         "elsa-multi-text-property": ElsaMultiTextProperty;
         "elsa-pager": ElsaPager;
         "elsa-property-editor": ElsaPropertyEditor;
+        "elsa-radio-list-property": ElsaRadioListProperty;
         "elsa-script-property": ElsaScriptProperty;
         "elsa-single-line-property": ElsaSingleLineProperty;
         "elsa-studio-home": ElsaStudioHome;
@@ -804,6 +824,7 @@ declare module "@stencil/core" {
             "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-property-editor": LocalJSX.ElsaPropertyEditor & JSXBase.HTMLAttributes<HTMLElsaPropertyEditorElement>;
+            "elsa-radio-list-property": LocalJSX.ElsaRadioListProperty & JSXBase.HTMLAttributes<HTMLElsaRadioListPropertyElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
             "elsa-studio-home": LocalJSX.ElsaStudioHome & JSXBase.HTMLAttributes<HTMLElsaStudioHomeElement>;
