@@ -3,7 +3,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
+using Elsa.Services.Bookmarks;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Signaling
@@ -20,7 +20,7 @@ namespace Elsa.Activities.Signaling
 
         private async IAsyncEnumerable<BookmarkResult> GetBookmarksInternalAsync(BookmarkProviderContext<SignalReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))!;
+            var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))!.ToLowerInvariant();
             var signalScope = (await context.ReadActivityPropertyAsync(x => x.Scope, cancellationToken))!;
 
             if (context.Mode == BookmarkIndexingMode.WorkflowBlueprint || signalScope == SignalScope.Global)

@@ -8,11 +8,14 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
-import { ActivityContextMenuState, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
+import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
+import { AxiosInstance, AxiosRequestConfig } from "axios";
+import { Service } from "axios-middleware";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
+import { WebhookDefinition } from "./models/webhook";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -39,6 +42,7 @@ export namespace Components {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "layoutDirection": LayoutDirection;
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
@@ -67,6 +71,8 @@ export namespace Components {
         "singleLineMode": boolean;
         "workflowDefinitionId": string;
     }
+    interface ElsaExternalEvents {
+    }
     interface ElsaInputTags {
         "fieldId"?: string;
         "fieldName"?: string;
@@ -79,6 +85,10 @@ export namespace Components {
         "fieldName"?: string;
         "placeHolder"?: string;
         "values"?: Array<string | SelectListItem>;
+    }
+    interface ElsaJsonProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
@@ -99,6 +109,7 @@ export namespace Components {
         "editorHeight": string;
         "expressions": Map<string>;
         "fieldName"?: string;
+        "isDisabled"?: boolean;
         "label": string;
         "singleLineMode": boolean;
         "supportedSyntaxes": Array<string>;
@@ -153,6 +164,15 @@ export namespace Components {
         "monacoLibPath": string;
         "serverUrl": string;
     }
+    interface ElsaStudioWebhookDefinitionsEdit {
+        "history": RouterHistory;
+        "match": MatchResults;
+        "serverUrl": string;
+    }
+    interface ElsaStudioWebhookDefinitionsList {
+        "history": RouterHistory;
+        "serverUrl": string;
+    }
     interface ElsaStudioWorkflowBlueprintView {
         "match": MatchResults;
         "serverUrl": string;
@@ -185,6 +205,20 @@ export namespace Components {
     interface ElsaToastNotification {
         "hide": () => Promise<void>;
         "show": (options: ToastNotificationOptions) => Promise<void>;
+    }
+    interface ElsaWebhookDefinitionEditorNotifications {
+    }
+    interface ElsaWebhookDefinitionEditorScreen {
+        "getServerUrl": () => Promise<string>;
+        "getWebhookId": () => Promise<string>;
+        "history"?: RouterHistory;
+        "serverUrl": string;
+        "webhookDefinition": WebhookDefinition;
+        "webhookId": string;
+    }
+    interface ElsaWebhookDefinitionsListScreen {
+        "history"?: RouterHistory;
+        "serverUrl": string;
     }
     interface ElsaWorkflowBlueprintViewerScreen {
         "getServerUrl": () => Promise<string>;
@@ -234,6 +268,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaWorkflowSettingsModal {
+        "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
 }
@@ -298,6 +333,12 @@ declare global {
         prototype: HTMLElsaExpressionEditorElement;
         new (): HTMLElsaExpressionEditorElement;
     };
+    interface HTMLElsaExternalEventsElement extends Components.ElsaExternalEvents, HTMLStencilElement {
+    }
+    var HTMLElsaExternalEventsElement: {
+        prototype: HTMLElsaExternalEventsElement;
+        new (): HTMLElsaExternalEventsElement;
+    };
     interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
     }
     var HTMLElsaInputTagsElement: {
@@ -309,6 +350,12 @@ declare global {
     var HTMLElsaInputTagsDropdownElement: {
         prototype: HTMLElsaInputTagsDropdownElement;
         new (): HTMLElsaInputTagsDropdownElement;
+    };
+    interface HTMLElsaJsonPropertyElement extends Components.ElsaJsonProperty, HTMLStencilElement {
+    }
+    var HTMLElsaJsonPropertyElement: {
+        prototype: HTMLElsaJsonPropertyElement;
+        new (): HTMLElsaJsonPropertyElement;
     };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
@@ -382,6 +429,18 @@ declare global {
         prototype: HTMLElsaStudioRootElement;
         new (): HTMLElsaStudioRootElement;
     };
+    interface HTMLElsaStudioWebhookDefinitionsEditElement extends Components.ElsaStudioWebhookDefinitionsEdit, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWebhookDefinitionsEditElement: {
+        prototype: HTMLElsaStudioWebhookDefinitionsEditElement;
+        new (): HTMLElsaStudioWebhookDefinitionsEditElement;
+    };
+    interface HTMLElsaStudioWebhookDefinitionsListElement extends Components.ElsaStudioWebhookDefinitionsList, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWebhookDefinitionsListElement: {
+        prototype: HTMLElsaStudioWebhookDefinitionsListElement;
+        new (): HTMLElsaStudioWebhookDefinitionsListElement;
+    };
     interface HTMLElsaStudioWorkflowBlueprintViewElement extends Components.ElsaStudioWorkflowBlueprintView, HTMLStencilElement {
     }
     var HTMLElsaStudioWorkflowBlueprintViewElement: {
@@ -429,6 +488,24 @@ declare global {
     var HTMLElsaToastNotificationElement: {
         prototype: HTMLElsaToastNotificationElement;
         new (): HTMLElsaToastNotificationElement;
+    };
+    interface HTMLElsaWebhookDefinitionEditorNotificationsElement extends Components.ElsaWebhookDefinitionEditorNotifications, HTMLStencilElement {
+    }
+    var HTMLElsaWebhookDefinitionEditorNotificationsElement: {
+        prototype: HTMLElsaWebhookDefinitionEditorNotificationsElement;
+        new (): HTMLElsaWebhookDefinitionEditorNotificationsElement;
+    };
+    interface HTMLElsaWebhookDefinitionEditorScreenElement extends Components.ElsaWebhookDefinitionEditorScreen, HTMLStencilElement {
+    }
+    var HTMLElsaWebhookDefinitionEditorScreenElement: {
+        prototype: HTMLElsaWebhookDefinitionEditorScreenElement;
+        new (): HTMLElsaWebhookDefinitionEditorScreenElement;
+    };
+    interface HTMLElsaWebhookDefinitionsListScreenElement extends Components.ElsaWebhookDefinitionsListScreen, HTMLStencilElement {
+    }
+    var HTMLElsaWebhookDefinitionsListScreenElement: {
+        prototype: HTMLElsaWebhookDefinitionsListScreenElement;
+        new (): HTMLElsaWebhookDefinitionsListScreenElement;
     };
     interface HTMLElsaWorkflowBlueprintViewerScreenElement extends Components.ElsaWorkflowBlueprintViewerScreen, HTMLStencilElement {
     }
@@ -501,8 +578,10 @@ declare global {
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
+        "elsa-external-events": HTMLElsaExternalEventsElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
+        "elsa-json-property": HTMLElsaJsonPropertyElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco": HTMLElsaMonacoElement;
         "elsa-multi-expression-editor": HTMLElsaMultiExpressionEditorElement;
@@ -515,6 +594,8 @@ declare global {
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
         "elsa-studio-home": HTMLElsaStudioHomeElement;
         "elsa-studio-root": HTMLElsaStudioRootElement;
+        "elsa-studio-webhook-definitions-edit": HTMLElsaStudioWebhookDefinitionsEditElement;
+        "elsa-studio-webhook-definitions-list": HTMLElsaStudioWebhookDefinitionsListElement;
         "elsa-studio-workflow-blueprint-view": HTMLElsaStudioWorkflowBlueprintViewElement;
         "elsa-studio-workflow-definitions-edit": HTMLElsaStudioWorkflowDefinitionsEditElement;
         "elsa-studio-workflow-definitions-list": HTMLElsaStudioWorkflowDefinitionsListElement;
@@ -523,6 +604,9 @@ declare global {
         "elsa-studio-workflow-registry": HTMLElsaStudioWorkflowRegistryElement;
         "elsa-switch-cases-property": HTMLElsaSwitchCasesPropertyElement;
         "elsa-toast-notification": HTMLElsaToastNotificationElement;
+        "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
+        "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
+        "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
         "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
@@ -559,6 +643,7 @@ declare namespace LocalJSX {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "layoutDirection"?: LayoutDirection;
         "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
@@ -590,6 +675,10 @@ declare namespace LocalJSX {
         "singleLineMode"?: boolean;
         "workflowDefinitionId"?: string;
     }
+    interface ElsaExternalEvents {
+        "onHttpClientConfigCreated"?: (event: CustomEvent<AxiosRequestConfig>) => void;
+        "onHttpClientCreated"?: (event: CustomEvent<{ service: Service, axiosInstance: AxiosInstance }>) => void;
+    }
     interface ElsaInputTags {
         "fieldId"?: string;
         "fieldName"?: string;
@@ -604,6 +693,10 @@ declare namespace LocalJSX {
         "onValueChanged"?: (event: CustomEvent<Array<string | SelectListItem>>) => void;
         "placeHolder"?: string;
         "values"?: Array<string | SelectListItem>;
+    }
+    interface ElsaJsonProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
     }
@@ -621,6 +714,7 @@ declare namespace LocalJSX {
         "editorHeight"?: string;
         "expressions"?: Map<string>;
         "fieldName"?: string;
+        "isDisabled"?: boolean;
         "label"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
         "onSyntaxChanged"?: (event: CustomEvent<string>) => void;
@@ -678,6 +772,15 @@ declare namespace LocalJSX {
         "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
+    interface ElsaStudioWebhookDefinitionsEdit {
+        "history"?: RouterHistory;
+        "match"?: MatchResults;
+        "serverUrl"?: string;
+    }
+    interface ElsaStudioWebhookDefinitionsList {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
+    }
     interface ElsaStudioWorkflowBlueprintView {
         "match"?: MatchResults;
         "serverUrl"?: string;
@@ -708,6 +811,18 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaToastNotification {
+    }
+    interface ElsaWebhookDefinitionEditorNotifications {
+    }
+    interface ElsaWebhookDefinitionEditorScreen {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
+        "webhookDefinition"?: WebhookDefinition;
+        "webhookId"?: string;
+    }
+    interface ElsaWebhookDefinitionsListScreen {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
     }
     interface ElsaWorkflowBlueprintViewerScreen {
         "serverUrl"?: string;
@@ -754,6 +869,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaWorkflowSettingsModal {
+        "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface IntrinsicElements {
@@ -767,8 +883,10 @@ declare namespace LocalJSX {
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
+        "elsa-external-events": ElsaExternalEvents;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
+        "elsa-json-property": ElsaJsonProperty;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco": ElsaMonaco;
         "elsa-multi-expression-editor": ElsaMultiExpressionEditor;
@@ -781,6 +899,8 @@ declare namespace LocalJSX {
         "elsa-single-line-property": ElsaSingleLineProperty;
         "elsa-studio-home": ElsaStudioHome;
         "elsa-studio-root": ElsaStudioRoot;
+        "elsa-studio-webhook-definitions-edit": ElsaStudioWebhookDefinitionsEdit;
+        "elsa-studio-webhook-definitions-list": ElsaStudioWebhookDefinitionsList;
         "elsa-studio-workflow-blueprint-view": ElsaStudioWorkflowBlueprintView;
         "elsa-studio-workflow-definitions-edit": ElsaStudioWorkflowDefinitionsEdit;
         "elsa-studio-workflow-definitions-list": ElsaStudioWorkflowDefinitionsList;
@@ -789,6 +909,9 @@ declare namespace LocalJSX {
         "elsa-studio-workflow-registry": ElsaStudioWorkflowRegistry;
         "elsa-switch-cases-property": ElsaSwitchCasesProperty;
         "elsa-toast-notification": ElsaToastNotification;
+        "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
+        "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
+        "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
         "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
@@ -815,8 +938,10 @@ declare module "@stencil/core" {
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;
+            "elsa-external-events": LocalJSX.ElsaExternalEvents & JSXBase.HTMLAttributes<HTMLElsaExternalEventsElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
+            "elsa-json-property": LocalJSX.ElsaJsonProperty & JSXBase.HTMLAttributes<HTMLElsaJsonPropertyElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
             "elsa-multi-expression-editor": LocalJSX.ElsaMultiExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaMultiExpressionEditorElement>;
@@ -829,6 +954,8 @@ declare module "@stencil/core" {
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
             "elsa-studio-home": LocalJSX.ElsaStudioHome & JSXBase.HTMLAttributes<HTMLElsaStudioHomeElement>;
             "elsa-studio-root": LocalJSX.ElsaStudioRoot & JSXBase.HTMLAttributes<HTMLElsaStudioRootElement>;
+            "elsa-studio-webhook-definitions-edit": LocalJSX.ElsaStudioWebhookDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWebhookDefinitionsEditElement>;
+            "elsa-studio-webhook-definitions-list": LocalJSX.ElsaStudioWebhookDefinitionsList & JSXBase.HTMLAttributes<HTMLElsaStudioWebhookDefinitionsListElement>;
             "elsa-studio-workflow-blueprint-view": LocalJSX.ElsaStudioWorkflowBlueprintView & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowBlueprintViewElement>;
             "elsa-studio-workflow-definitions-edit": LocalJSX.ElsaStudioWorkflowDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsEditElement>;
             "elsa-studio-workflow-definitions-list": LocalJSX.ElsaStudioWorkflowDefinitionsList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsListElement>;
@@ -837,6 +964,9 @@ declare module "@stencil/core" {
             "elsa-studio-workflow-registry": LocalJSX.ElsaStudioWorkflowRegistry & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowRegistryElement>;
             "elsa-switch-cases-property": LocalJSX.ElsaSwitchCasesProperty & JSXBase.HTMLAttributes<HTMLElsaSwitchCasesPropertyElement>;
             "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
+            "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
+            "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
+            "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;
             "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;

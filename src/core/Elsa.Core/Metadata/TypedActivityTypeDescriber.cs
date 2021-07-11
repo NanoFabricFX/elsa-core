@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper.Internal;
 using Elsa.Attributes;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
@@ -86,7 +85,7 @@ namespace Elsa.Metadata
 
                 yield return new ActivityInputDescriptor
                 (
-                    (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
+                    activityPropertyAttribute.Name ?? propertyInfo.Name,
                     propertyInfo.PropertyType,
                     _uiHintResolver.GetUIHint(propertyInfo),
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),

@@ -109,8 +109,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Watch("serverUrl")
   async serverUrlChangedHandler(newValue: string) {
-    if (newValue && newValue.length > 0)
+    if (newValue && newValue.length > 0) {
       await this.loadActivityDescriptors();
+      await this.loadWorkflowStorageDescriptors();
+    }
   }
 
   @Watch("monacoLibPath")
@@ -148,6 +150,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async loadActivityDescriptors() {
     const client = createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
+  }
+
+  async loadWorkflowStorageDescriptors() {
+    const client = createElsaClient(this.serverUrl);
+    state.workflowStorageDescriptors = await client.workflowStorageProvidersApi.list();
   }
 
   updateWorkflowDefinition(value: WorkflowDefinition) {
@@ -191,6 +198,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       isSingleton: workflowDefinition.isSingleton,
       name: workflowDefinition.name,
       tag: workflowDefinition.tag,
+      channel: workflowDefinition.channel,
       persistenceBehavior: workflowDefinition.persistenceBehavior,
       publish: publish || false,
       variables: workflowDefinition.variables,
@@ -203,8 +211,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
         persistWorkflow: x.persistWorkflow,
         loadWorkflowContext: x.loadWorkflowContext,
         saveWorkflowContext: x.saveWorkflowContext,
-        persistOutput: x.persistOutput,
-        properties: x.properties
+        properties: x.properties,
+        propertyStorageProviders: x.propertyStorageProviders
       })),
       connections: workflowModel.connections.map<ConnectionDefinition>(x => ({
         sourceActivityId: x.sourceId,
@@ -217,6 +225,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.publishing = publish;
 
     try {
+      console.debug("Saving workflow...");
       workflowDefinition = await client.workflowDefinitionsApi.save(request);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
@@ -266,7 +275,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   mapActivityModel(source: ActivityDefinition): ActivityModel {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
-    
+
     return {
       activityId: source.activityId,
       description: source.description,
@@ -275,10 +284,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
       type: source.type,
       properties: source.properties,
       outcomes: [...activityDescriptor.outcomes],
-      persistOutput: source.persistOutput,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
-      loadWorkflowContext: source.loadWorkflowContext
+      loadWorkflowContext: source.loadWorkflowContext,
+      propertyStorageProviders: source.propertyStorageProviders
     }
   }
 
@@ -296,11 +305,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onShowWorkflowSettingsClick() {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
-  }
-
-  private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
-    this.updateWorkflowDefinition(workflowDefinition);
-    await this.saveWorkflowInternal(this.workflowModel);
   }
 
   async onPublishClicked() {
@@ -333,6 +337,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
+  }
+
+  private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
+    this.updateWorkflowDefinition(workflowDefinition);
+    await this.saveWorkflowInternal(this.workflowModel);
   }
 
   render() {

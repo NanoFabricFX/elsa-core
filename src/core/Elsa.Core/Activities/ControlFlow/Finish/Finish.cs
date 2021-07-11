@@ -20,7 +20,10 @@ namespace Elsa.Activities.ControlFlow
     public class Finish : Activity
     {
         [ActivityInput(Hint = "The value to set as the workflow's output", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public object? OutputValue { get; set; }
+        public object? ActivityOutput { get; set; }
+        
+        [ActivityOutput]
+        public object? Output { get; set; }
 
         [ActivityInput(
             Hint = "The outcomes to set on the container activity",
@@ -28,7 +31,7 @@ namespace Elsa.Activities.ControlFlow
             DefaultValue = new[] { Elsa.OutcomeNames.Done },
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public IEnumerable<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
+        public ICollection<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -58,9 +61,9 @@ namespace Elsa.Activities.ControlFlow
             context.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
 
             // Return output.
-            var output = new FinishOutput(OutputValue, OutcomeNames);
+            Output = new FinishOutput(ActivityOutput, OutcomeNames);
 
-            return Output(output);
+            return Noop();
         }
     }
 }
